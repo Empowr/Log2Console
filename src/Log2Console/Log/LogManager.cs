@@ -371,8 +371,11 @@ namespace Log2Console.Log
             _logListView.BeginUpdate();
 
             // Limit the number of displayed messages if necessary
-            if (UserSettings.Instance.MessageCycleCount > 0)
+            if (UserSettings.Instance.MessageCycleCount > 0 &&
+                LogMessages.Count > 1.1*UserSettings.Instance.MessageCycleCount)
+            {
                 RemoveExtraLogMessages(UserSettings.Instance.MessageCycleCount);
+            }
 
             // Set Previous item
             if (_logListView.Items.Count > 0)
@@ -404,18 +407,18 @@ namespace Log2Console.Log
             return item;
         }
 
-        private void RemoveExtraLogMessages(int count)
+        private void RemoveExtraLogMessages(int targetMessageCount)
         {
             // TODO: Buggy with Grouping....!!!
-
+            
             var idx = 0;
-            while (LogMessages.Count > count)
+            while (LogMessages.Count > targetMessageCount)
             {
                 var item = LogMessages[idx];
 
                 if (!item.Enabled)
                 {
-                    count++;
+                    targetMessageCount++;
                     idx++;
                 }
 
@@ -426,7 +429,7 @@ namespace Log2Console.Log
         private void RemoveLogMessage(LogMessageItem item)
         {
             LogMessages.Remove(item);
-
+            
             if (Group != null)
                 Group.Items.Remove(item.Item);
 

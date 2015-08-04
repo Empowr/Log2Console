@@ -886,8 +886,8 @@ namespace Log2Console
 
         private void autoLogToggleBtn_Click(object sender, EventArgs e)
         {
-            autoLogToggleBtn.Checked = !autoLogToggleBtn.Checked;
-            UserSettings.Instance.AutoScrollToLastLog = autoLogToggleBtn.Checked;
+            UserSettings.Instance.AutoScrollToLastLog = !UserSettings.Instance.AutoScrollToLastLog;
+            autoLogToggleBtn.Checked = UserSettings.Instance.AutoScrollToLastLog;
         }
 
         private void clearAll_Click(object sender, EventArgs e)
@@ -980,5 +980,28 @@ namespace Log2Console
         }
 
         #endregion
+
+        private void logListView_Scroll(object sender, EventArgs e)
+        {
+            if (logListView.Items.Count == 0)
+            {
+                return;
+            }
+
+            var lastItem = logListView.Items[logListView.Items.Count-1];
+
+            bool isLastItemVisible = lastItem.Bounds.IntersectsWith(logListView.ClientRectangle);
+
+            if (isLastItemVisible && !UserSettings.Instance.AutoScrollToLastLog)
+            {
+                UserSettings.Instance.AutoScrollToLastLog = true;
+                autoLogToggleBtn.Checked = true;
+            }
+            else if(!isLastItemVisible && UserSettings.Instance.AutoScrollToLastLog)
+            {
+                UserSettings.Instance.AutoScrollToLastLog = false;
+                autoLogToggleBtn.Checked = false;
+            }
+        }
     }
 }

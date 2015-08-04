@@ -948,9 +948,8 @@ namespace Log2Console
 
     private void autoLogToggleBtn_Click(object sender, EventArgs e)
     {
-      UserSettings.Instance.AutoScrollToLastLog = !UserSettings.Instance.AutoScrollToLastLog;
-
-      autoLogToggleBtn.Checked = UserSettings.Instance.AutoScrollToLastLog;
+      autoLogToggleBtn.Checked = !autoLogToggleBtn.Checked;
+      UserSettings.Instance.AutoScrollToLastLog = autoLogToggleBtn.Checked;
     }
 
     private void clearAll_Click(object sender, EventArgs e)

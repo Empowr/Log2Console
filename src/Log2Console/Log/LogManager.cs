@@ -47,6 +47,7 @@ namespace Log2Console.Log
             ClearLogMessages();
 
             RootLoggerItem.ClearAll();
+
             _fullPathLoggers.Clear();
         }
 

@@ -21,8 +21,10 @@ namespace Log2Console.Receiver
     {
         [NonSerialized]
         private FileSystemWatcher _fileWatcher;
+
         [NonSerialized]
         private StreamReader _fileReader;
+
         [NonSerialized]
         private string _filename;
 
@@ -58,17 +60,17 @@ namespace Log2Console.Receiver
         }
 
         private FieldType[] _fieldList = new[]
-                                             {
-                                                 new FieldType(LogMessageField.SequenceNr, "sequence"),
-                                                 new FieldType(LogMessageField.TimeStamp, "time"),
-                                                 new FieldType(LogMessageField.Level, "level"),
-                                                 new FieldType(LogMessageField.ThreadName, "thread"),
-                                                 new FieldType(LogMessageField.CallSiteClass, "class"),
-                                                 new FieldType(LogMessageField.CallSiteMethod, "method"),
-                                                 new FieldType(LogMessageField.Message, "message"),
-                                                 new FieldType(LogMessageField.Exception, "exception"),
-                                                 new FieldType(LogMessageField.SourceFileName, "file")
-                                             };
+        {
+            new FieldType(LogMessageField.SequenceNr, "sequence"),
+            new FieldType(LogMessageField.TimeStamp, "time"),
+            new FieldType(LogMessageField.Level, "level"),
+            new FieldType(LogMessageField.ThreadName, "thread"),
+            new FieldType(LogMessageField.CallSiteClass, "class"),
+            new FieldType(LogMessageField.CallSiteMethod, "method"),
+            new FieldType(LogMessageField.Message, "message"),
+            new FieldType(LogMessageField.Exception, "exception"),
+            new FieldType(LogMessageField.SourceFileName, "file")
+        };
 
         [Category("Configuration")]
         [DisplayName("Field List")]

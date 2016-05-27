@@ -729,7 +729,7 @@ namespace Log2Console
                 // Append exception
                 tbExceptions.Text = string.Empty;
                 if (UserSettings.Instance.ShowMsgDetailsException &&
-                    !String.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
+                    !string.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
                 {
                     //sb.AppendLine(logMsgItem.Message.ExceptionString);            
                     if (!string.IsNullOrEmpty(logMsgItem.Message.ExceptionString))

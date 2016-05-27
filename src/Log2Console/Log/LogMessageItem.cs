@@ -145,6 +145,5 @@ namespace Log2Console.Log
         {
             return Message.GetMessageDetails();
         }
-
     }
 }

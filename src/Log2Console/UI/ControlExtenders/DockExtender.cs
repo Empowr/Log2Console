@@ -8,7 +8,6 @@
 // LIABILITY FOR ANY DATA DAMAGE/LOSS THAT THIS PRODUCT MAY CAUSE.
 //-----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Drawing;
 
@@ -64,7 +63,7 @@ namespace ControlExtenders
 
         public Floaties Floaties
         {
-            get { return _floaties; } 
+            get { return _floaties; }
         }
 
         public DockExtender(Control dockHost)
@@ -142,7 +141,7 @@ namespace ControlExtenders
         }
 
         // finds the potential dockhost control at the specified location
-        internal Control FindDockHost(Floaty floaty , Point pt)
+        internal Control FindDockHost(Floaty floaty, Point pt)
         {
             Control c = null;
             if (FormIsHit(floaty.DockState.OrgDockHost, pt))

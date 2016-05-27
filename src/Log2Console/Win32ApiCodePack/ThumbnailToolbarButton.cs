@@ -7,12 +7,11 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
 {
     public class ThumbnailToolbarButton : IDisposable
     {
-        private static uint _nextId = 101;
+        static uint _nextId = 101;
+        THUMBBUTTON _win32ThumbButton;
+
         public readonly uint Id;
-        private THBFLAGS _flags;
-        private THUMBBUTTON _win32ThumbButton;
-        internal bool AddedToTaskbar;
-        internal IntPtr WindowHandle;
+        THBFLAGS _flags;
 
         public ThumbnailToolbarButton(Icon icon, string tooltip)
         {
@@ -20,7 +19,7 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             Id = _nextId;
 
             // increment the ID
-            if (_nextId == int.MaxValue)
+            if (_nextId == Int32.MaxValue)
                 _nextId = 101; // our starting point
             else
                 _nextId++;
@@ -34,8 +33,8 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
         }
 
         /// <summary>
-        ///     The window manager should call this method to raise the public click event to all
-        ///     the subscribers.
+        /// The window manager should call this method to raise the public click event to all
+        /// the subscribers.
         /// </summary>
         internal void FireClick(TaskbarWindow window)
         {
@@ -46,11 +45,46 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
 
         public event EventHandler Click;
 
+        #region Icon Property
+
+        Icon _icon;
+        public Icon Icon
+        {
+            get { return _icon; }
+            set
+            {
+                if (_icon == value) return;
+                _icon = value;
+                UpdateThumbnailButton();
+            }
+        }
+
+        #endregion
+
+        #region Tooltip Property
+
+        string _tooltip;
+        public string Tooltip
+        {
+            get { return _tooltip; }
+            set
+            {
+                if (_tooltip == value) return;
+                _tooltip = value;
+                UpdateThumbnailButton();
+            }
+        }
+
+        #endregion
+
         #region Enabled Property
 
         public bool Enabled
         {
-            get { return (_flags & THBFLAGS.THBF_DISABLED) == 0; }
+            get
+            {
+                return (_flags & THBFLAGS.THBF_DISABLED) == 0;
+            }
             set
             {
                 if (Enabled == value) return;
@@ -91,16 +125,19 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             if (!AddedToTaskbar) return;
 
             // Get the array of thumbnail buttons in native format
-            THUMBBUTTON[] nativeButtons = {Win32ThumbButton};
+            THUMBBUTTON[] nativeButtons = { Win32ThumbButton };
 
-            var hr = TaskbarManager.Instance.TaskbarList.ThumbBarUpdateButtons(WindowHandle, 1, nativeButtons);
+            HRESULT hr = TaskbarManager.Instance.TaskbarList.ThumbBarUpdateButtons(WindowHandle, 1, nativeButtons);
 
-            if (!CoreErrorHelper.Succeeded((int) hr))
-                Marshal.ThrowExceptionForHR((int) hr);
+            if (!CoreErrorHelper.Succeeded((int)hr))
+                Marshal.ThrowExceptionForHR((int)hr);
         }
 
+        internal IntPtr WindowHandle;
+        internal bool AddedToTaskbar;
+
         /// <summary>
-        ///     Native representation of the thumbnail button
+        /// Native representation of the thumbnail button
         /// </summary>
         internal THUMBBUTTON Win32ThumbButton
         {
@@ -124,40 +161,6 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             }
         }
 
-        #region Icon Property
-
-        private Icon _icon;
-
-        public Icon Icon
-        {
-            get { return _icon; }
-            set
-            {
-                if (_icon == value) return;
-                _icon = value;
-                UpdateThumbnailButton();
-            }
-        }
-
-        #endregion
-
-        #region Tooltip Property
-
-        private string _tooltip;
-
-        public string Tooltip
-        {
-            get { return _tooltip; }
-            set
-            {
-                if (_tooltip == value) return;
-                _tooltip = value;
-                UpdateThumbnailButton();
-            }
-        }
-
-        #endregion
-
         #region IDisposable logic
 
         public void Dispose()
@@ -171,7 +174,7 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             GC.SuppressFinalize(this);
         }
 
-        private void Dispose(bool disposing)
+        void Dispose(bool disposing)
         {
             if (!disposing) return;
 

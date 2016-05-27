@@ -5,9 +5,7 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
 {
     public sealed class ThumbnailToolbarManager
     {
-        internal ThumbnailToolbarManager()
-        {
-        }
+        internal ThumbnailToolbarManager() { }
 
         public void AddButtons(IntPtr windowHandle, params ThumbnailToolbarButton[] buttons)
         {

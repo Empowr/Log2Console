@@ -44,83 +44,86 @@ namespace Microsoft.WindowsAPICodePack.Internal
     internal struct THUMBBUTTON
     {
         /// <summary>
-        ///     WPARAM value for a THUMBBUTTON being clicked.
+        /// WPARAM value for a THUMBBUTTON being clicked.
         /// </summary>
         internal const int THBN_CLICKED = 0x1800;
 
-        [MarshalAs(UnmanagedType.U4)] internal THBMASK dwMask;
+        [MarshalAs(UnmanagedType.U4)]
+        internal THBMASK dwMask;
         internal uint iId;
         internal uint iBitmap;
         internal IntPtr hIcon;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] internal string szTip;
-        [MarshalAs(UnmanagedType.U4)] internal THBFLAGS dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        internal string szTip;
+        [MarshalAs(UnmanagedType.U4)]
+        internal THBFLAGS dwFlags;
     }
 
     /// <summary>
-    ///     HRESULT Wrapper
-    ///     This is intended for Library Internal use only.
+    /// HRESULT Wrapper
+    /// This is intended for Library Internal use only.
     /// </summary>
     public enum HRESULT : uint
     {
         /// <summary>
-        ///     S_FALSE
+        /// S_FALSE
         /// </summary>
         S_FALSE = 0x0001,
 
         /// <summary>
-        ///     S_OK
+        /// S_OK
         /// </summary>
         S_OK = 0x0000,
 
         /// <summary>
-        ///     E_INVALIDARG
+        /// E_INVALIDARG
         /// </summary>
         E_INVALIDARG = 0x80070057,
 
         /// <summary>
-        ///     E_OUTOFMEMORY
+        /// E_OUTOFMEMORY
         /// </summary>
         E_OUTOFMEMORY = 0x8007000E,
 
         /// <summary>
-        ///     E_NOINTERFACE
+        /// E_NOINTERFACE
         /// </summary>
         E_NOINTERFACE = 0x80004002,
 
         /// <summary>
-        ///     E_FAIL
+        /// E_FAIL
         /// </summary>
         E_FAIL = 0x80004005,
 
         /// <summary>
-        ///     E_ELEMENTNOTFOUND
+        /// E_ELEMENTNOTFOUND
         /// </summary>
         E_ELEMENTNOTFOUND = 0x80070490,
 
         /// <summary>
-        ///     TYPE_E_ELEMENTNOTFOUND
+        /// TYPE_E_ELEMENTNOTFOUND
         /// </summary>
         TYPE_E_ELEMENTNOTFOUND = 0x8002802B,
 
         /// <summary>
-        ///     NO_OBJECT
+        /// NO_OBJECT
         /// </summary>
         NO_OBJECT = 0x800401E5,
 
         /// <summary>
-        ///     Win32 Error code: ERROR_CANCELLED
+        /// Win32 Error code: ERROR_CANCELLED
         /// </summary>
         ERROR_CANCELLED = 1223,
 
         /// <summary>
-        ///     ERROR_CANCELLED
+        /// ERROR_CANCELLED
         /// </summary>
         E_ERROR_CANCELLED = 0x800704C7,
 
         /// <summary>
-        ///     The requested resource is in use
+        /// The requested resource is in use
         /// </summary>
-        RESOURCE_IN_USE = 0x800700AA
+        RESOURCE_IN_USE = 0x800700AA,
     }
 
     [ComImport]
@@ -150,7 +153,7 @@ namespace Microsoft.WindowsAPICodePack.Internal
 
         // ITaskbarList3
         [PreserveSig]
-        void SetProgressValue(IntPtr hwnd, ulong ullCompleted, ulong ullTotal);
+        void SetProgressValue(IntPtr hwnd, UInt64 ullCompleted, UInt64 ullTotal);
 
         [PreserveSig]
         void SetProgressState(IntPtr hwnd, TBPFLAG tbpFlags);
@@ -171,8 +174,7 @@ namespace Microsoft.WindowsAPICodePack.Internal
         HRESULT ThumbBarAddButtons(IntPtr hwnd, uint cButtons, [MarshalAs(UnmanagedType.LPArray)] THUMBBUTTON[] pButtons);
 
         [PreserveSig]
-        HRESULT ThumbBarUpdateButtons(IntPtr hwnd, uint cButtons,
-            [MarshalAs(UnmanagedType.LPArray)] THUMBBUTTON[] pButtons);
+        HRESULT ThumbBarUpdateButtons(IntPtr hwnd, uint cButtons, [MarshalAs(UnmanagedType.LPArray)] THUMBBUTTON[] pButtons);
 
         [PreserveSig]
         void ThumbBarSetImageList(IntPtr hwnd, IntPtr himl);
@@ -193,14 +195,12 @@ namespace Microsoft.WindowsAPICodePack.Internal
     [Guid("56FDF344-FD6D-11d0-958A-006097C9A090")]
     [ClassInterface(ClassInterfaceType.None)]
     [ComImport]
-    internal class CTaskbarList
-    {
-    }
+    internal class CTaskbarList { }
 
     internal static class CoreErrorHelper
     {
         /// <summary>
-        ///     This is intended for Library Internal use only.
+        /// This is intended for Library Internal use only.
         /// </summary>
         /// <param name="hresult">The error code.</param>
         /// <returns>True if the error code indicates success.</returns>
@@ -213,27 +213,30 @@ namespace Microsoft.WindowsAPICodePack.Internal
     internal class CoreHelpers
     {
         /// <summary>
-        ///     Determines if the application is running on Windows Vista or later 7
+        /// Determines if the application is running on Windows Vista or later 7
         /// </summary>
         public static bool RunningOnVistaOrLater
         {
-            get { return Environment.OSVersion.Version.Major >= 6; }
+            get
+            {
+                return Environment.OSVersion.Version.Major >= 6;
+            }
         }
 
         /// <summary>
-        ///     Determines if the application is running on Windows 7
+        /// Determines if the application is running on Windows 7
         /// </summary>
         public static bool RunningOnWin7
         {
             get
             {
                 return (Environment.OSVersion.Version.Major > 6) ||
-                       (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 1);
+                    (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 1);
             }
         }
 
         /// <summary>
-        ///     Throws PlatformNotSupportedException if the application is not running on Windows 7
+        /// Throws PlatformNotSupportedException if the application is not running on Windows 7
         /// </summary>
         public static void ThrowIfNotWin7()
         {
@@ -246,12 +249,12 @@ namespace Microsoft.WindowsAPICodePack.Internal
     {
         public static int LOWORD(long dword)
         {
-            return (short) (dword & 0xFFFF);
+            return (short)(dword & 0xFFFF);
         }
 
         public static int HIWORD(long dword, int size)
         {
-            return (short) (dword >> size);
+            return (short)(dword >> size);
         }
     }
 }

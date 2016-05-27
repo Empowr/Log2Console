@@ -8,7 +8,6 @@ namespace Microsoft.WindowsAPICodePack.Internal
     {
         public readonly IntPtr WindowHandle;
         private ThumbnailToolbarButton[] _thumbnailButtons;
-        public TaskbarWindow TaskbarWindow;
 
         public ThumbnailToolbarProxyWindow(IntPtr windowHandle, ThumbnailToolbarButton[] buttons)
         {
@@ -29,7 +28,7 @@ namespace Microsoft.WindowsAPICodePack.Internal
             AssignHandle(windowHandle);
         }
 
-        private void UpdateHandle(ThumbnailToolbarButton button)
+        void UpdateHandle(ThumbnailToolbarButton button)
         {
             button.WindowHandle = WindowHandle;
             button.AddedToTaskbar = false;
@@ -40,16 +39,17 @@ namespace Microsoft.WindowsAPICodePack.Internal
             var handled = TaskbarWindowManager.Instance.DispatchMessage(ref m, TaskbarWindow);
 
             // If it's a WM_Destroy message, then also forward it to the base class (our native window)
-            if ((m.Msg == (int) TabbedThumbnailNativeMethods.WM_DESTROY) ||
-                (m.Msg == (int) TabbedThumbnailNativeMethods.WM_NCDESTROY) ||
-                ((m.Msg == (int) TabbedThumbnailNativeMethods.WM_SYSCOMMAND) &&
-                 (((int) m.WParam) == TabbedThumbnailNativeMethods.SC_CLOSE)))
+            if ((m.Msg == (int)TabbedThumbnailNativeMethods.WM_DESTROY) ||
+               (m.Msg == (int)TabbedThumbnailNativeMethods.WM_NCDESTROY) ||
+               ((m.Msg == (int)TabbedThumbnailNativeMethods.WM_SYSCOMMAND) && (((int)m.WParam) == TabbedThumbnailNativeMethods.SC_CLOSE)))
             {
                 base.WndProc(ref m);
             }
             else if (!handled)
                 base.WndProc(ref m);
         }
+
+        public TaskbarWindow TaskbarWindow;
 
         #region IDisposable logic
 

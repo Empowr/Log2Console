@@ -13,9 +13,9 @@
     <ApplicationIcon>res/windowb.ico</ApplicationIcon>
     <ManifestCertificateThumbprint>734B2D84C6B094EB368104E29886FB3793CCF867</ManifestCertificateThumbprint>
     <ManifestKeyFile>Log2Console_TemporaryKey.pfx</ManifestKeyFile>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
     <SignManifests>false</SignManifests>
-    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <SccProjectName>%24/log2console/src/Log2Console</SccProjectName>
     <SccLocalPath>.</SccLocalPath>
     <SccAuxPath>https://tfs.codeplex.com/tfs/tfs04</SccAuxPath>
@@ -29,10 +29,11 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
     <PublishUrl>ftp://remserver/htdocs/log2console/</PublishUrl>
     <Install>true</Install>
-    <InstallFrom>Web</InstallFrom>
+    <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateMode>Foreground</UpdateMode>
     <UpdateInterval>7</UpdateInterval>
@@ -40,7 +41,6 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <InstallUrl>http://remstation.no-ip.com/log2console/</InstallUrl>
     <SupportUrl>http://www.codeplex.com/log2console/Thread/List.aspx</SupportUrl>
     <ProductName>Log2Console</ProductName>
     <PublisherName>Remy Baudet aka Statyk7</PublisherName>
@@ -48,8 +48,8 @@
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>0.2.2907.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -61,6 +61,7 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -76,15 +77,25 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\External\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLog.4.3.4\lib\net45\NLog.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Messaging" />
     <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -95,20 +106,34 @@
     <Compile Include="AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ICSharpCodeExtension\Actions\CaretActionsExtension.cs" />
     <Compile Include="Log\ILoggerView.cs" />
     <Compile Include="Log\ILogManager.cs" />
     <Compile Include="Log\ILogMessageNotifiable.cs" />
+    <Compile Include="Log\LoggerItem.cs" />
+    <Compile Include="Log\LogLevel.cs" />
+    <Compile Include="Log\LogLevelInfo.cs" />
+    <Compile Include="Log\LogLevels.cs" />
     <Compile Include="Log\LogManager.cs">
     </Compile>
     <Compile Include="Log\LogMessage.cs" />
+    <Compile Include="Log\LogMessageField.cs" />
+    <Compile Include="Log\LogMessageItem.cs" />
+    <Compile Include="Log\LogUtils.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Utils.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Receiver\CsvFileReceiver.cs" />
+    <Compile Include="Receiver\ReceiverUtils.cs" />
+    <Compile Include="Settings\FieldType.cs" />
+    <Compile Include="Settings\LayoutSettings.cs" />
+    <Compile Include="Settings\SourceFileLocation.cs" />
     <Compile Include="Win32ApiCodePack\CommonDllNames.cs" />
     <Compile Include="Win32ApiCodePack\Core.cs" />
     <Compile Include="Win32ApiCodePack\TabbedThumbnailNativeMethods.cs" />
@@ -146,7 +171,10 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -246,6 +274,16 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Configuration\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ICSharpCode.TextEditor\ICSharpCode.TextEditor.csproj">
+      <Project>{2D18BE89-D210-49EB-A9DD-2246FBB3DF6D}</Project>
+      <Name>ICSharpCode.TextEditor</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RichTextBoxLinks\RichTextBoxLinks.csproj">
+      <Project>{8B833B00-BB4C-4FAF-B6C4-BF77824F96A1}</Project>
+      <Name>RichTextBoxLinks</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

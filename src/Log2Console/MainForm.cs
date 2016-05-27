@@ -1,46 +1,62 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using ControlExtenders;
-using log4net.Config;
-using Log2Console.Log;
 using Log2Console.Properties;
+using log4net.Config;
+using Microsoft.WindowsAPICodePack.Taskbar;
+
+using ControlExtenders;
+
+using Log2Console.Log;
 using Log2Console.Receiver;
 using Log2Console.Settings;
 using Log2Console.UI;
-using Microsoft.WindowsAPICodePack.Taskbar;
+
 using Timer = System.Threading.Timer;
 
 // Configure log4net using the .config file
-
 [assembly: XmlConfigurator(Watch = true)]
+
 
 namespace Log2Console
 {
     public partial class MainForm : Form, ILogMessageNotifiable
     {
-        private const int _taskbarProgressTimerPeriod = 2000;
-        private readonly ThumbnailToolbarButton _autoScrollWinbarBtn;
-        private readonly ThumbnailToolbarButton _clearAllWinbarBtn;
-        private readonly DockExtender _dockExtender;
-        private readonly Queue<LogMessage> _eventQueue;
         private readonly bool _firstStartup;
         private readonly bool _isWin7orLater;
+        private readonly WindowRestorer _windowRestorer;
+
+        private readonly DockExtender _dockExtender;
         private readonly IFloaty _logDetailsPanelFloaty;
         private readonly IFloaty _loggersPanelFloaty;
-        private readonly ThumbnailToolbarButton _pauseWinbarBtn;
-        private readonly WindowRestorer _windowRestorer;
-        private bool _addedLogMessage;
-        private bool _ignoreEvents;
+
+        private string _msgDetailText = String.Empty;
         private LoggerItem _lastHighlightedLogger;
         private LoggerItem _lastHighlightedLogMsgs;
-        private Timer _logMsgTimer;
-        private string _msgDetailText = string.Empty;
+        private bool _ignoreEvents;
         private bool _pauseLog;
+
         private Timer _taskbarProgressTimer;
+        private const int _taskbarProgressTimerPeriod = 2000;
+        private bool _addedLogMessage;
+        private readonly ThumbnailToolbarButton _pauseWinbarBtn;
+        private readonly ThumbnailToolbarButton _autoScrollWinbarBtn;
+        private readonly ThumbnailToolbarButton _clearAllWinbarBtn;
+
+        private readonly Queue<LogMessage> _eventQueue;
+        private Timer _logMsgTimer;
+
+        delegate void NotifyLogMsgCallback(LogMessage logMsg);
+        delegate void NotifyLogMsgsCallback(LogMessage[] logMsgs);
+
+        // Specific event handler on minimized action
+        public event EventHandler Minimized;
+
 
         public MainForm()
         {
@@ -51,7 +67,6 @@ namespace Log2Console
             levelComboBox.SelectedIndex = 0;
 
             Minimized += OnMinimized;
-
 
             // Init Log Manager Singleton
             LogManager.Instance.Initialize(new TreeViewLoggerView(loggerTreeView), logListView);
@@ -79,15 +94,13 @@ namespace Log2Console
                 // Force panel to visible
                 UserSettings.Instance.Layout.ShowLogDetailView = true;
                 UserSettings.Instance.Layout.ShowLoggerTree = true;
-                UserSettings.Instance.DefaultFont = Environment.OSVersion.Version.Major >= 6
-                    ? new Font("Segoe UI", 9F)
-                    : new Font("Tahoma", 8.25F);
+                UserSettings.Instance.DefaultFont = Environment.OSVersion.Version.Major >= 6 ? new Font("Segoe UI", 9F) : new Font("Tahoma", 8.25F);
             }
 
             Font = UserSettings.Instance.DefaultFont ?? Font;
 
             _windowRestorer = new WindowRestorer(this, UserSettings.Instance.Layout.WindowPosition,
-                UserSettings.Instance.Layout.WindowState);
+                                                       UserSettings.Instance.Layout.WindowState);
 
             // Windows 7 CodePack (Taskbar icons and progress)
             _isWin7orLater = TaskbarManager.IsPlatformSupported;
@@ -98,29 +111,24 @@ namespace Log2Console
                 {
                     // Taskbar Progress
                     TaskbarManager.Instance.ApplicationId = Text;
-                    _taskbarProgressTimer = new Timer(OnTaskbarProgressTimer, null, _taskbarProgressTimerPeriod,
-                        _taskbarProgressTimerPeriod);
+                    _taskbarProgressTimer = new Timer(OnTaskbarProgressTimer, null, _taskbarProgressTimerPeriod, _taskbarProgressTimerPeriod);
 
                     // Pause Btn
-                    _pauseWinbarBtn = new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap) pauseBtn.Image).GetHicon()),
-                        pauseBtn.ToolTipText);
+                    _pauseWinbarBtn = new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap)pauseBtn.Image).GetHicon()), pauseBtn.ToolTipText);
                     _pauseWinbarBtn.Click += pauseBtn_Click;
 
                     // Auto Scroll Btn
                     _autoScrollWinbarBtn =
-                        new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap) autoLogToggleBtn.Image).GetHicon()),
-                            autoLogToggleBtn.ToolTipText);
+                        new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap)autoLogToggleBtn.Image).GetHicon()), autoLogToggleBtn.ToolTipText);
                     _autoScrollWinbarBtn.Click += autoLogToggleBtn_Click;
 
                     // Clear All Btn
                     _clearAllWinbarBtn =
-                        new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap) clearLoggersBtn.Image).GetHicon()),
-                            clearLoggersBtn.ToolTipText);
+                        new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap)clearLoggersBtn.Image).GetHicon()), clearLoggersBtn.ToolTipText);
                     _clearAllWinbarBtn.Click += clearAll_Click;
 
                     // Add Btns
-                    TaskbarManager.Instance.ThumbnailToolbars.AddButtons(Handle, _pauseWinbarBtn, _autoScrollWinbarBtn,
-                        _clearAllWinbarBtn);
+                    TaskbarManager.Instance.ThumbnailToolbars.AddButtons(Handle, _pauseWinbarBtn, _autoScrollWinbarBtn, _clearAllWinbarBtn);
                 }
                 catch (Exception)
                 {
@@ -134,28 +142,26 @@ namespace Log2Console
             _eventQueue = new Queue<LogMessage>();
 
             // Initialize Receivers
-            foreach (var receiver in UserSettings.Instance.Receivers)
+            foreach (IReceiver receiver in UserSettings.Instance.Receivers)
                 InitializeReceiver(receiver);
 
             // Start the timer to process event logs in batch mode
             _logMsgTimer = new Timer(OnLogMessageTimer, null, 1000, 100);
         }
 
-        // Specific event handler on minimized action
-        public event EventHandler Minimized;
 
+        private const int WM_SIZE = 0x0005;
+        private const int SIZE_MINIMIZED = 1;
         /// <summary>
-        ///     Catch on minimize event
-        ///     @author : Asbjørn Ulsberg -=|=- asbjornu@hotmail.com
+        /// Catch on minimize event
+        /// @author : Asbjørn Ulsberg -=|=- asbjornu@hotmail.com
         /// </summary>
         /// <param name="msg"></param>
         protected override void WndProc(ref Message msg)
         {
-            const int WM_SIZE = 0x0005;
-            const int SIZE_MINIMIZED = 1;
 
             if ((msg.Msg == WM_SIZE)
-                && ((int) msg.WParam == SIZE_MINIMIZED)
+                && ((int)msg.WParam == SIZE_MINIMIZED)
                 && (Minimized != null))
             {
                 Minimized(this, EventArgs.Empty);
@@ -209,12 +215,13 @@ namespace Log2Console
                     _taskbarProgressTimer = null;
                 }
 
-                if (UserSettings.Instance.Layout.LogListViewColumnsWidths == null)
+                if ((UserSettings.Instance.Layout.LogListViewColumnsWidths == null) ||
+                    (UserSettings.Instance.Layout.LogListViewColumnsWidths.Length != logListView.Columns.Count))
                 {
                     UserSettings.Instance.Layout.LogListViewColumnsWidths = new int[logListView.Columns.Count];
                 }
 
-                for (var i = 0; i < logListView.Columns.Count; i++)
+                for (int i = 0; i < logListView.Columns.Count; i++)
                 {
                     UserSettings.Instance.Layout.LogListViewColumnsWidths[i] = logListView.Columns[i].Width;
                 }
@@ -248,7 +255,7 @@ namespace Log2Console
 
         private void ApplySettings(bool noCheck)
         {
-            Opacity = (double) UserSettings.Instance.Transparency/100;
+            Opacity = (double)UserSettings.Instance.Transparency / 100;
             ShowInTaskbar = !UserSettings.Instance.HideTaskbarIcon;
 
             TopMost = UserSettings.Instance.AlwaysOnTop;
@@ -260,15 +267,16 @@ namespace Log2Console
             loggerTreeView.Font = UserSettings.Instance.LoggerTreeFont;
 
             logListView.BackColor = UserSettings.Instance.LogListBackColor;
+            logDetailTextBox.BackColor = UserSettings.Instance.LogMessageBackColor;
 
-            LogLevels.Instance.LogLevelInfos[(int) LogLevel.Trace].Color = UserSettings.Instance.TraceLevelColor;
-            LogLevels.Instance.LogLevelInfos[(int) LogLevel.Debug].Color = UserSettings.Instance.DebugLevelColor;
-            LogLevels.Instance.LogLevelInfos[(int) LogLevel.Info].Color = UserSettings.Instance.InfoLevelColor;
-            LogLevels.Instance.LogLevelInfos[(int) LogLevel.Warn].Color = UserSettings.Instance.WarnLevelColor;
-            LogLevels.Instance.LogLevelInfos[(int) LogLevel.Error].Color = UserSettings.Instance.ErrorLevelColor;
-            LogLevels.Instance.LogLevelInfos[(int) LogLevel.Fatal].Color = UserSettings.Instance.FatalLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Trace].Color = UserSettings.Instance.TraceLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Debug].Color = UserSettings.Instance.DebugLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Info].Color = UserSettings.Instance.InfoLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Warn].Color = UserSettings.Instance.WarnLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Error].Color = UserSettings.Instance.ErrorLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Fatal].Color = UserSettings.Instance.FatalLevelColor;
 
-            levelComboBox.SelectedIndex = (int) UserSettings.Instance.LogLevelInfo.Level;
+            levelComboBox.SelectedIndex = (int)UserSettings.Instance.LogLevelInfo.Level;
 
             if (logListView.ShowGroups != UserSettings.Instance.GroupLogMessages)
             {
@@ -278,7 +286,7 @@ namespace Log2Console
                 }
                 else
                 {
-                    var res = MessageBox.Show(
+                    DialogResult res = MessageBox.Show(
                         this,
                         @"You changed the Message Grouping setting, the Log Message List must be cleared, OK?",
                         Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
@@ -292,6 +300,30 @@ namespace Log2Console
                     {
                         UserSettings.Instance.GroupLogMessages = !UserSettings.Instance.GroupLogMessages;
                     }
+                }
+            }
+
+            //See if the Columns Changed
+            bool columnsChanged = false;
+
+            if (logListView.Columns.Count != UserSettings.Instance.ColumnConfiguration.Length)
+                columnsChanged = true;
+            else
+                for (int i = 0; i < UserSettings.Instance.ColumnConfiguration.Length; i++)
+                {
+                    if (!UserSettings.Instance.ColumnConfiguration[i].Name.Equals(logListView.Columns[i].Text))
+                    {
+                        columnsChanged = true;
+                        break;
+                    }
+                }
+
+            if (columnsChanged)
+            {
+                logListView.Columns.Clear();
+                foreach (var column in UserSettings.Instance.ColumnConfiguration)
+                {
+                    logListView.Columns.Add(column.Name);
                 }
             }
 
@@ -309,9 +341,10 @@ namespace Log2Console
 
                 if (UserSettings.Instance.Layout.LogListViewColumnsWidths != null)
                 {
-                    for (var i = 0; i < UserSettings.Instance.Layout.LogListViewColumnsWidths.Length; i++)
+                    for (int i = 0; i < UserSettings.Instance.Layout.LogListViewColumnsWidths.Length; i++)
                     {
-                        logListView.Columns[i].Width = UserSettings.Instance.Layout.LogListViewColumnsWidths[i];
+                        if (i < logListView.Columns.Count)
+                            logListView.Columns[i].Width = UserSettings.Instance.Layout.LogListViewColumnsWidths[i];
                     }
                 }
             }
@@ -332,9 +365,7 @@ namespace Log2Console
                 {
                     receiver.Terminate();
                 }
-                catch
-                {
-                }
+                catch { }
 
                 ShowErrorBox("Failed to Initialize Receiver: " + ex.Message);
             }
@@ -370,6 +401,62 @@ namespace Log2Console
             LogManager.Instance.ClearAll();
         }
 
+        private void CollapseLoggers()
+        {
+            loggerTreeView.CollapseAll();
+            loggerTreeView.TopNode.Expand();
+        }
+
+        private void DeactivateSelectedLoggers()
+        {
+            logListView.BeginUpdate();
+            RemovedLoggerHighlight();
+
+            if (logListView.SelectedItems.Count > 0)
+            {
+                foreach (ListViewItem selectedItem in logListView.SelectedItems)
+                {
+                    var logMsgItem = selectedItem.Tag as LogMessageItem;
+
+                    if (logMsgItem != null)
+                    {
+                        logMsgItem.Parent.Enabled = false;
+                        _lastHighlightedLogger = null;
+                    }
+                }
+
+            }
+            logListView.EndUpdate();
+        }
+
+        private void DeactivateNotSelectedLoggers()
+        {
+            logListView.BeginUpdate();
+
+            RemovedLoggerHighlight();
+
+            if (logListView.SelectedItems.Count > 0)
+            {
+                var selectedItems = new List<LogMessageItem>();
+                foreach (ListViewItem item in logListView.SelectedItems.Cast<ListViewItem>())
+                {
+                    var logMsgItem = item.Tag as LogMessageItem;
+
+                    if (logMsgItem != null)
+                    {
+                        selectedItems.Add(logMsgItem);
+                    }
+                }
+                LogManager.Instance.DeactivateLogger();
+                foreach (var logMessageItem in selectedItems)
+                {
+                    logMessageItem.Parent.Enabled = true;
+                }
+
+            }
+            logListView.EndUpdate();
+        }
+
         private void ClearAll()
         {
             ClearLogMessages();
@@ -392,8 +479,8 @@ namespace Log2Console
         private void ShowSettingsForm()
         {
             // Make a copy of the settings in case the user cancels.
-            var copy = UserSettings.Instance.Clone();
-            var form = new SettingsForm(copy);
+            UserSettings copy = UserSettings.Instance.Clone();
+            SettingsForm form = new SettingsForm(copy);
             if (form.ShowDialog(this) != DialogResult.OK)
                 return;
 
@@ -405,17 +492,17 @@ namespace Log2Console
 
         private void ShowReceiversForm()
         {
-            var form = new ReceiversForm(UserSettings.Instance.Receivers);
+            ReceiversForm form = new ReceiversForm(UserSettings.Instance.Receivers);
             if (form.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            foreach (var receiver in form.RemovedReceivers)
+            foreach (IReceiver receiver in form.RemovedReceivers)
             {
                 TerminateReceiver(receiver);
                 UserSettings.Instance.Receivers.Remove(receiver);
             }
 
-            foreach (var receiver in form.AddedReceivers)
+            foreach (IReceiver receiver in form.AddedReceivers)
             {
                 UserSettings.Instance.Receivers.Add(receiver);
                 InitializeReceiver(receiver);
@@ -424,9 +511,10 @@ namespace Log2Console
             UserSettings.Instance.Save();
         }
 
+
         private void ShowAboutForm()
         {
-            var aboutBox = new AboutForm();
+            AboutForm aboutBox = new AboutForm();
             aboutBox.ShowDialog(this);
         }
 
@@ -444,8 +532,65 @@ namespace Log2Console
                 WindowState = _windowRestorer.WindowState;
         }
 
+        #region ILogMessageNotifiable Members
+
         /// <summary>
-        ///     Adds a new log message, synchronously.
+        /// Transforms the notification into an asynchronous call.
+        /// The actual method called to add log messages is 'AddLogMessages'.
+        /// </summary>
+        public void Notify(LogMessage[] logMsgs)
+        {
+            //// InvokeRequired required compares the thread ID of the
+            //// calling thread to the thread ID of the creating thread.
+            //// If these threads are different, it returns true.
+            //if (logListView.InvokeRequired)
+            //{
+            //    NotifyLogMsgsCallback d = AddLogMessages;
+            //    Invoke(d, new object[] { logMsgs });
+            //}
+            //else
+            //{
+            //    AddLogMessages(logMsgs);
+            //}
+
+            lock (_eventQueue)
+            {
+                foreach (var logMessage in logMsgs)
+                {
+                    _eventQueue.Enqueue(logMessage);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Transforms the notification into an asynchronous call.
+        /// The actual method called to add a log message is 'AddLogMessage'.
+        /// </summary>
+        public void Notify(LogMessage logMsg)
+        {
+            //// InvokeRequired required compares the thread ID of the
+            //// calling thread to the thread ID of the creating thread.
+            //// If these threads are different, it returns true.
+            //if (logListView.InvokeRequired)
+            //{
+            //    NotifyLogMsgCallback d = AddLogMessage;
+            //    Invoke(d, new object[] { logMsg });
+            //}
+            //else
+            //{
+            //    AddLogMessage(logMsg);
+            //}
+
+            lock (_eventQueue)
+            {
+                _eventQueue.Enqueue(logMsg);
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Adds a new log message, synchronously.
         /// </summary>
         private void AddLogMessages(IEnumerable<LogMessage> logMsgs)
         {
@@ -454,29 +599,36 @@ namespace Log2Console
 
             logListView.BeginUpdate();
 
-            foreach (var msg in logMsgs)
+            foreach (LogMessage msg in logMsgs)
                 AddLogMessage(msg);
 
             logListView.EndUpdate();
         }
 
         /// <summary>
-        ///     Adds a new log message, synchronously.
+        /// Adds a new log message, synchronously.
         /// </summary>
         private void AddLogMessage(LogMessage logMsg)
         {
-            if (_pauseLog)
-                return;
+            try
+            {
+                if (_pauseLog)
+                    return;
 
-            RemovedLogMsgsHighlight();
+                RemovedLogMsgsHighlight();
 
-            _addedLogMessage = true;
+                _addedLogMessage = true;
 
-            LogManager.Instance.ProcessLogMessage(logMsg);
+                LogManager.Instance.ProcessLogMessage(logMsg);
 
-            if (!Visible && UserSettings.Instance.NotifyNewLogWhenHidden)
-                ShowBalloonTip("A new message has been received...");
+                if (!Visible && UserSettings.Instance.NotifyNewLogWhenHidden)
+                    ShowBalloonTip("A new message has been received...");
+            }
+            catch (Exception)
+            {
+            }
         }
+
 
         private void OnLogMessageTimer(object sender)
         {
@@ -498,7 +650,7 @@ namespace Log2Console
                 if (logListView.InvokeRequired)
                 {
                     NotifyLogMsgsCallback d = AddLogMessages;
-                    Invoke(d, new object[] {messages});
+                    Invoke(d, new object[] { messages });
                 }
                 else
                 {
@@ -507,13 +659,14 @@ namespace Log2Console
             }
         }
 
+
         private void OnTaskbarProgressTimer(object o)
         {
             if (_isWin7orLater)
             {
                 TaskbarManager.Instance.SetProgressState(_addedLogMessage
-                    ? TaskbarProgressBarState.Indeterminate
-                    : TaskbarProgressBarState.NoProgress);
+                                                                ? TaskbarProgressBarState.Indeterminate
+                                                                : TaskbarProgressBarState.NoProgress);
             }
             _addedLogMessage = false;
         }
@@ -555,42 +708,169 @@ namespace Log2Console
 
             if (logMsgItem == null)
             {
-                _msgDetailText = string.Empty;
+                logDetailTextBox.Text = string.Empty;
+                PopulateExceptions(null);
+                OpenSourceFile(null, 0);
             }
             else
             {
-                var sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder();
+
+                sb.Append(logMsgItem.GetMessageDetails());
 
                 if (UserSettings.Instance.ShowMsgDetailsProperties)
                 {
                     // Append properties
-                    foreach (var kvp in logMsgItem.Message.Properties)
+                    foreach (KeyValuePair<string, string> kvp in logMsgItem.Message.Properties)
                         sb.AppendFormat("{0} = {1}{2}", kvp.Key, kvp.Value, Environment.NewLine);
                 }
 
-                // Append message
-                sb.AppendLine(logMsgItem.Message.Message.Replace("\n", "\r\n"));
 
                 // Append exception
+                tbExceptions.Text = string.Empty;
                 if (UserSettings.Instance.ShowMsgDetailsException &&
-                    !string.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
+                    !String.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
                 {
-                    sb.AppendLine(logMsgItem.Message.ExceptionString);
+                    //sb.AppendLine(logMsgItem.Message.ExceptionString);            
+                    if (!string.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
+                    {
+                        PopulateExceptions(logMsgItem.Message.ExceptionString);
+                    }
                 }
 
-                _msgDetailText = sb.ToString();
 
                 logDetailTextBox.ForeColor = logMsgItem.Message.Level.Color;
+                logDetailTextBox.Rtf = sb.ToString();
+
+                OpenSourceFile(logMsgItem.Message.SourceFileName, logMsgItem.Message.SourceFileLineNr);
+            }
+        }
+
+        private void OpenSourceFile(string fileName, uint line)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                textEditorSourceCode.Visible = false;
+                lbFileName.Text = string.Empty;
+                return;
             }
 
-            logDetailTextBox.Text = _msgDetailText;
+            textEditorSourceCode.Visible = true;
+            try
+            {
+                if (!File.Exists(fileName))
+                {
+                    //If the file cannot be found, try to locate it using the source code mapping configuration
+                    var mappedFile = TryToLocateSourceFile(fileName);
+                    if (string.IsNullOrEmpty(mappedFile))
+                    {
+                        textEditorSourceCode.Visible = false;
+                        lbFileName.Text = fileName + " not found...";
+                        return;
+                    }
+
+                    if (!File.Exists(mappedFile))
+                    {
+                        textEditorSourceCode.Visible = false;
+                        lbFileName.Text = mappedFile + " not found...";
+                        return;
+                    }
+
+                    fileName = mappedFile;
+                }
+
+                if (line > 1)
+                    line--;
+                textEditorSourceCode.LoadFile(fileName);
+                textEditorSourceCode.ActiveTextAreaControl.TextArea.Caret.Line = (int)line;
+                textEditorSourceCode.ActiveTextAreaControl.TextArea.Caret.UpdateCaretPosition();
+                lbFileName.Text = fileName + ":" + line;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(string.Format("Message: {0}, Stack Trace: {1}", ex.Message, ex.StackTrace), "Error opening source file");
+            }
         }
 
-        private void logDetailTextBox_TextChanged(object sender, EventArgs e)
+        private string TryToLocateSourceFile(string file)
         {
-            // Disable Edition without making it Read Only (better rendering...), see above
-            logDetailTextBox.Text = _msgDetailText;
+            if (UserSettings.Instance.SourceLocationMapConfiguration != null)
+                foreach (var sourceMap in UserSettings.Instance.SourceLocationMapConfiguration)
+                {
+                    if (file.StartsWith(sourceMap.LogSource))
+                    {
+                        file = sourceMap.LocalSource + file.Remove(0, sourceMap.LogSource.Length);
+                        return file;
+                    }
+                }
+            return null;
         }
+
+        private void PopulateExceptions(string exceptions)
+        {
+            if (string.IsNullOrEmpty(exceptions))
+            {
+                tbExceptions.Text = string.Empty;
+                return;
+            }
+
+            string[] lines = exceptions.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            foreach (var line in lines)
+            {
+                if (!ParseCSharpStackTraceLine(line))
+                {
+                    //No supported exception stack traces is detected
+                    tbExceptions.SelectedText = line;
+                }
+                //else if (Add other Parsers Here...)
+
+                tbExceptions.SelectedText = "\r\n";
+            }
+        }
+
+        private bool ParseCSharpStackTraceLine(string line)
+        {
+            bool stackTraceFileDetected = false;
+
+            //Detect a C Sharp File                
+            int endOfFileIndex = line.ToLower().LastIndexOf(".cs");
+            if (endOfFileIndex != -1)
+            {
+                var leftTruncatedFile = line.Substring(0, endOfFileIndex + 3);
+                int startOfFileIndex = leftTruncatedFile.LastIndexOf(":") - 1;
+                if (startOfFileIndex >= 0)
+                {
+                    string fileName = leftTruncatedFile.Substring(startOfFileIndex, leftTruncatedFile.Length - startOfFileIndex);
+
+                    const string lineSignature = ":line ";
+                    int lineIndex = line.ToLower().LastIndexOf(lineSignature);
+                    if (lineIndex != -1)
+                    {
+                        int lineSignatureLength = lineSignature.Length;
+                        var lineNrString = line.Substring(lineIndex + lineSignatureLength,
+                                                            line.Length - lineIndex - lineSignatureLength);
+                        lineNrString = lineNrString.TrimEnd(new[] { ',' });
+                        if (!string.IsNullOrEmpty(lineNrString))
+                        {
+                            uint parsedLineNr;
+                            if (uint.TryParse(lineNrString, out parsedLineNr))
+                            {
+                                int fileLine = (int)parsedLineNr;
+                                stackTraceFileDetected = true;
+
+                                tbExceptions.SelectedText = line.Substring(0, startOfFileIndex - 1) + " ";
+                                tbExceptions.InsertLink(string.Format("{0} line:{1}",
+                                                                fileName, fileLine));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return stackTraceFileDetected;
+        }
+
+
 
         private void clearBtn_Click(object sender, EventArgs e)
         {
@@ -623,6 +903,21 @@ namespace Log2Console
             ClearLoggers();
         }
 
+        private void collapseAllBtn_Click(object sender, EventArgs e)
+        {
+            CollapseLoggers();
+        }
+
+        private void deactivatedsourcesBtn_Click(object sender, EventArgs e)
+        {
+            DeactivateSelectedLoggers();
+        }
+
+        private void deactivatedUnselectSourcesBtn_Click(object sender, EventArgs e)
+        {
+            DeactivateNotSelectedLoggers();
+        }
+
         private void closeLogDetailPanelBtn_Click(object sender, EventArgs e)
         {
             ShowDetailsPanel(false);
@@ -646,7 +941,7 @@ namespace Log2Console
 
         private void copyLogDetailBtn_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(logDetailTextBox.Text))
+            if (String.IsNullOrEmpty(logDetailTextBox.Text))
                 return;
 
             Clipboard.SetText(logDetailTextBox.Text);
@@ -705,12 +1000,12 @@ namespace Log2Console
             }
         }
 
-        private void searchTextBox_TextChanged(object sender, EventArgs e)
+        private void searchTextBox_KeyUp(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode != Keys.Return || e.Alt || e.Control)
+                return;
             using (new AutoWaitCursor())
-            {
                 LogManager.Instance.SearchText(searchTextBox.Text);
-            }
         }
 
         private void zoomOutLogListBtn_Click(object sender, EventArgs e)
@@ -746,13 +1041,14 @@ namespace Log2Console
         private static void ZoomControlFont(Control ctrl, bool zoomIn)
         {
             // Limit to a minimum size
-            var newSize = Math.Max(0.5f, ctrl.Font.SizeInPoints + (zoomIn ? +1 : -1));
+            float newSize = Math.Max(0.5f, ctrl.Font.SizeInPoints + (zoomIn ? +1 : -1));
             ctrl.Font = new Font(ctrl.Font.FontFamily, newSize);
         }
 
+
         private void deleteLoggerTreeMenuItem_Click(object sender, EventArgs e)
         {
-            var logger = (LoggerItem) loggerTreeView.SelectedNode.Tag;
+            LoggerItem logger = (LoggerItem)loggerTreeView.SelectedNode.Tag;
 
             if (logger != null)
             {
@@ -812,7 +1108,7 @@ namespace Log2Console
             using (new AutoWaitCursor())
             {
                 UserSettings.Instance.LogLevelInfo =
-                    LogUtils.GetLogLevelInfo((LogLevel) levelComboBox.SelectedIndex);
+                    LogUtils.GetLogLevelInfo((LogLevel)levelComboBox.SelectedIndex);
                 LogManager.Instance.UpdateLogLevel();
             }
         }
@@ -861,10 +1157,10 @@ namespace Log2Console
 
             if (_isWin7orLater)
             {
-                _pauseWinbarBtn.Icon = Icon.FromHandle(((Bitmap) pauseBtn.Image).GetHicon());
+                _pauseWinbarBtn.Icon = Icon.FromHandle(((Bitmap)pauseBtn.Image).GetHicon());
 
                 TaskbarManager.Instance.SetOverlayIcon(
-                    _pauseLog ? Icon.FromHandle(Resources.Pause16.GetHicon()) : null, string.Empty);
+                    _pauseLog ? Icon.FromHandle(Resources.Pause16.GetHicon()) : null, String.Empty);
             }
         }
 
@@ -887,6 +1183,7 @@ namespace Log2Console
         private void autoLogToggleBtn_Click(object sender, EventArgs e)
         {
             UserSettings.Instance.AutoScrollToLastLog = !UserSettings.Instance.AutoScrollToLastLog;
+
             autoLogToggleBtn.Checked = UserSettings.Instance.AutoScrollToLastLog;
         }
 
@@ -895,113 +1192,131 @@ namespace Log2Console
             ClearAll();
         }
 
+
         /// <summary>
-        ///     Quick and dirty implementation of an export function...
+        /// Quick and dirty implementation of an export function...
         /// </summary>
         private void saveBtn_Click(object sender, EventArgs e)
         {
-            var dlg = new SaveFileDialog();
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = "csv files (*.csv)|*.csv";
+            dlg.FileName = "logs";
+            dlg.Title = "Export to Excel";
             if (dlg.ShowDialog(this) == DialogResult.Cancel)
                 return;
 
-            using (var sw = new StreamWriter(dlg.FileName))
+            utils.Export2Excel(logListView, dlg.FileName);
+
+
+
+        }
+
+
+        private void btnOpenFileInVS_Click(object sender, EventArgs e)
+        {
+            try
             {
-                using (var ssw = TextWriter.Synchronized(sw))
+                var processInfo = new ProcessStartInfo("devenv",
+                                                       string.Format("/edit \"{0}\" /command \"Edit.Goto {1}\"",
+                                                                     textEditorSourceCode.FileName, 0));
+                var process = Process.Start(processInfo);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error opening file in Visual Studio");
+            }
+        }
+
+        private void TbExceptionsLinkClicked(object sender, LinkClickedEventArgs e)
+        {
+            string exception = e.LinkText;
+            if (exception != null)
+            {
+                var exceptionPair = exception.Split(new[] { " line:" }, StringSplitOptions.None);
+                if (exceptionPair.Length == 2)
                 {
-                    foreach (ListViewItem lvi in logListView.Items)
-                    {
-                        var line =
-                            string.Format("{0}\t{1}\t{2}\t{3}\t{4}",
-                                lvi.SubItems[0].Text, lvi.SubItems[1].Text, lvi.SubItems[2].Text, lvi.SubItems[3].Text,
-                                lvi.SubItems[4].Text);
-                        ssw.WriteLine(line);
-                    }
+                    int lineNr;
+                    int.TryParse(exceptionPair[1], out lineNr);
+
+                    OpenSourceFile(exceptionPair[0], (uint)lineNr);
+                    tabControlDetail.SelectedTab = tabSource;
                 }
             }
         }
 
-        private delegate void NotifyLogMsgCallback(LogMessage logMsg);
-
-        private delegate void NotifyLogMsgsCallback(LogMessage[] logMsgs);
-
-        #region ILogMessageNotifiable Members
-
-        /// <summary>
-        ///     Transforms the notification into an asynchronous call.
-        ///     The actual method called to add log messages is 'AddLogMessages'.
-        /// </summary>
-        public void Notify(LogMessage[] logMsgs)
+        private void quickLoadBtn_Click(object sender, EventArgs e)
         {
-            //// InvokeRequired required compares the thread ID of the
-            //// calling thread to the thread ID of the creating thread.
-            //// If these threads are different, it returns true.
-            //if (logListView.InvokeRequired)
-            //{
-            //    NotifyLogMsgsCallback d = AddLogMessages;
-            //    Invoke(d, new object[] { logMsgs });
-            //}
-            //else
-            //{
-            //    AddLogMessages(logMsgs);
-            //}
-
-            lock (_eventQueue)
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                foreach (var logMessage in logMsgs)
+                if (!File.Exists(openFileDialog1.FileName))
                 {
-                    _eventQueue.Enqueue(logMessage);
+                    MessageBox.Show(string.Format("File: {0} does not exists", openFileDialog1.FileName),
+                                    "Error Opening Log File");
+                    return;
                 }
+
+                var fileReceivers = new List<IReceiver>();
+                foreach (var receiver in UserSettings.Instance.Receivers)
+                {
+                    if (receiver is CsvFileReceiver)
+                        fileReceivers.Add(receiver);
+                }
+
+                var form = new ReceiversForm(fileReceivers, true);
+                if (form.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                foreach (IReceiver receiver in form.AddedReceivers)
+                {
+                    UserSettings.Instance.Receivers.Add(receiver);
+                    InitializeReceiver(receiver);
+                }
+
+                UserSettings.Instance.Save();
+
+                var fileReceiver = form.SelectedReceiver as CsvFileReceiver;
+                if (fileReceiver == null)
+                    return;
+
+                fileReceiver.ShowFromBeginning = true;
+                fileReceiver.FileToWatch = openFileDialog1.FileName;
+                fileReceiver.Attach(this);
+
+                /*
+            var fileReceiver = new CsvFileReceiver();
+
+            fileReceiver.FileToWatch = openFileDialog1.FileName;
+            fileReceiver.ReadHeaderFromFile = true;
+            fileReceiver.ShowFromBeginning = true;
+    
+            fileReceiver.Initialize();
+            fileReceiver.Attach(this);
+            */
             }
         }
 
-        /// <summary>
-        ///     Transforms the notification into an asynchronous call.
-        ///     The actual method called to add a log message is 'AddLogMessage'.
-        /// </summary>
-        public void Notify(LogMessage logMsg)
+        private void logListView_KeyDown(object sender, KeyEventArgs e)
         {
-            //// InvokeRequired required compares the thread ID of the
-            //// calling thread to the thread ID of the creating thread.
-            //// If these threads are different, it returns true.
-            //if (logListView.InvokeRequired)
-            //{
-            //    NotifyLogMsgCallback d = AddLogMessage;
-            //    Invoke(d, new object[] { logMsg });
-            //}
-            //else
-            //{
-            //    AddLogMessage(logMsg);
-            //}
-
-            lock (_eventQueue)
+            if (e.KeyCode == Keys.Delete)
             {
-                _eventQueue.Enqueue(logMsg);
+                DeactivateSelectedLoggers();
             }
+
+            if (e.Control && e.KeyCode == Keys.C)
+                CopySelectedValuesToClipboard();
         }
 
-        #endregion
-
-        private void logListView_Scroll(object sender, EventArgs e)
+        private void CopySelectedValuesToClipboard()
         {
-            if (logListView.Items.Count == 0)
+            var builder = new StringBuilder();
+            foreach (ListViewItem item in logListView.SelectedItems)
             {
-                return;
+                var logMsgItem = item.Tag as LogMessageItem;
+                if (logMsgItem != null)
+                    builder.AppendLine(logMsgItem.Message.ToString());
             }
 
-            var lastItem = logListView.Items[logListView.Items.Count-1];
-
-            bool isLastItemVisible = lastItem.Bounds.IntersectsWith(logListView.ClientRectangle);
-
-            if (isLastItemVisible && !UserSettings.Instance.AutoScrollToLastLog)
-            {
-                UserSettings.Instance.AutoScrollToLastLog = true;
-                autoLogToggleBtn.Checked = true;
-            }
-            else if(!isLastItemVisible && UserSettings.Instance.AutoScrollToLastLog)
-            {
-                UserSettings.Instance.AutoScrollToLastLog = false;
-                autoLogToggleBtn.Checked = false;
-            }
+            Clipboard.SetText(builder.ToString());
         }
     }
 }

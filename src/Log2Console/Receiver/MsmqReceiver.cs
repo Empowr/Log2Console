@@ -1,23 +1,29 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
-using System.Messaging;
 using System.Text;
 using System.Threading;
+using System.Messaging;
+
 using Log2Console.Log;
+
 
 namespace Log2Console.Receiver
 {
+
     [Serializable]
     [DisplayName("Windows Message Queue (MSMQ)")]
     public class MsmqReceiver : BaseReceiver
     {
-        [NonSerialized] private const int QueueCheckTimerDelayAndInterval = 5000;
-        private bool _bulkProcessBackedUpMessages = true;
+        [NonSerialized]
+        private MessageQueue _queue;
 
-        [NonSerialized] private MessageQueue _queue;
+        [NonSerialized]
+        private Timer _queueCreationCheckTimer;
 
-        [NonSerialized] private Timer _queueCreationCheckTimer;
+        [NonSerialized]
+        private const int QueueCheckTimerDelayAndInterval = 5000;
+
 
         private string _queueName = @".\private$\log";
 
@@ -33,25 +39,25 @@ namespace Log2Console.Receiver
 
         [Category("Configuration")]
         [DisplayName("Create Queue")]
-        [Description(
-            "Determines how to handle queue creation.  If true and the queue does not exist it will be created.  If false and the queue does not exist the receiver will wait for the queue to be created."
-            )]
+        [Description("Determines how to handle queue creation.  If true and the queue does not exist it will be created.  If false and the queue does not exist the receiver will wait for the queue to be created.")]
         public bool Create { get; set; }
 
         [Category("Configuration")]
         public bool Transactional { get; set; }
 
+
+        private bool _bulkProcessBackedUpMessages = true;
+
         [Category("Behavior")]
         [DefaultValue(true)]
         [DisplayName("Bulk Process Backed Up Messages")]
-        [Description(
-            "If true multiple messages in the queue are processed as one update to the log viewer.  This improves the performance of the viewer"
-            )]
+        [Description("If true multiple messages in the queue are processed as one update to the log viewer.  This improves the performance of the viewer")]
         public bool BulkProcessBackedUpMessages
         {
             get { return _bulkProcessBackedUpMessages; }
             set { _bulkProcessBackedUpMessages = value; }
         }
+
 
         [Browsable(false)]
         public override string SampleClientConfig
@@ -77,7 +83,9 @@ namespace Log2Console.Receiver
             }
         }
 
+
         /// <summary>
+        /// 
         /// </summary>
         public override void Initialize()
         {
@@ -93,8 +101,8 @@ namespace Log2Console.Receiver
                      * Start the queue check timer.  Should the time be configurable?
                      */
                     _queueCreationCheckTimer = new Timer(QueueCreationCheckTimerFunction, this,
-                        QueueCheckTimerDelayAndInterval,
-                        QueueCheckTimerDelayAndInterval);
+                                                         QueueCheckTimerDelayAndInterval,
+                                                         QueueCheckTimerDelayAndInterval);
                     return;
                 }
             }
@@ -102,44 +110,49 @@ namespace Log2Console.Receiver
             Start();
         }
 
+
+
         /// <summary>
+        /// 
         /// </summary>
         private void Start()
         {
+
             _queue = new MessageQueue(QueueName);
 
-            _queue.ReceiveCompleted += delegate(object source, ReceiveCompletedEventArgs asyncResult)
+            _queue.ReceiveCompleted += delegate (Object source, ReceiveCompletedEventArgs asyncResult)
             {
                 try
                 {
                     // End the asynchronous receive operation.
-                    var m = ((MessageQueue) source).EndReceive(asyncResult.AsyncResult);
+                    Message m = ((MessageQueue)source).EndReceive(asyncResult.AsyncResult);
 
                     if (Notifiable != null)
                     {
-                        var loggingEvent = Encoding.ASCII.GetString(((MemoryStream) m.BodyStream).ToArray());
-                        var logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(loggingEvent, "MSMQLogger");
+                        string loggingEvent = Encoding.ASCII.GetString(((MemoryStream)m.BodyStream).ToArray());
+                        LogMessage logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(loggingEvent, "MSMQLogger");
                         logMsg.LoggerName = string.Format("{0}_{1}", QueueName.TrimStart('.'), logMsg.LoggerName);
+                        logMsg.RootLoggerName = QueueName;
                         Notifiable.Notify(logMsg);
                     }
 
 
-                    if (this.BulkProcessBackedUpMessages)
+                    if (BulkProcessBackedUpMessages)
                     {
-                        var all = ((MessageQueue) source).GetAllMessages();
+                        Message[] all = ((MessageQueue)source).GetAllMessages();
                         if (all.Length > 0)
                         {
-                            var numberofmessages = all.Length > 1000 ? 1000 : all.Length;
+                            int numberofmessages = all.Length > 1000 ? 1000 : all.Length;
 
-                            var logs = new LogMessage[numberofmessages];
+                            LogMessage[] logs = new LogMessage[numberofmessages];
 
-                            for (var i = 0; i < numberofmessages; i++)
+                            for (int i = 0; i < numberofmessages; i++)
                             {
-                                var thisone = ((MessageQueue) source).Receive();
+                                Message thisone = ((MessageQueue)source).Receive();
 
-                                var loggingEvent =
-                                    Encoding.ASCII.GetString(((MemoryStream) thisone.BodyStream).ToArray());
-                                var logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(loggingEvent, "MSMQLogger");
+                                string loggingEvent =
+                                    Encoding.ASCII.GetString(((MemoryStream)thisone.BodyStream).ToArray());
+                                LogMessage logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(loggingEvent, "MSMQLogger");
                                 logMsg.LoggerName = string.Format("{0}_{1}", QueueName.TrimStart('.'), logMsg.LoggerName);
                                 logs[i] = logMsg;
                             }
@@ -148,7 +161,7 @@ namespace Log2Console.Receiver
                         }
                     }
 
-                    ((MessageQueue) source).BeginReceive();
+                    ((MessageQueue)source).BeginReceive();
                 }
                 catch (MessageQueueException)
                 {
@@ -159,7 +172,11 @@ namespace Log2Console.Receiver
             _queue.BeginReceive();
         }
 
+
+
+
         /// <summary>
+        /// 
         /// </summary>
         public override void Terminate()
         {
@@ -173,7 +190,9 @@ namespace Log2Console.Receiver
             }
         }
 
+
         /// <summary>
+        /// 
         /// </summary>
         /// <param name="state"></param>
         private static void QueueCreationCheckTimerFunction(object state)
@@ -181,7 +200,7 @@ namespace Log2Console.Receiver
             //TODOCJH:  If this timer gets called then we did not finish the job before the maximum allowable time.
             //_logger.Fatal("JobMaxExecutionTimerFunction");
 
-            var rcv = state as MsmqReceiver;
+            MsmqReceiver rcv = state as MsmqReceiver;
             if ((rcv != null) && MessageQueue.Exists(rcv.QueueName))
             {
                 rcv._queueCreationCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);

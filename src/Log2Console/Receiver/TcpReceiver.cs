@@ -13,8 +13,7 @@ namespace Log2Console.Receiver
     {
         #region Port Property
 
-        private int _port = 4505;
-
+        int _port = 4505;
         [Category("Configuration")]
         [DisplayName("TCP Port Number")]
         [DefaultValue(4505)]
@@ -28,8 +27,7 @@ namespace Log2Console.Receiver
 
         #region IpV6 Property
 
-        private bool _ipv6;
-
+        bool _ipv6;
         [Category("Configuration")]
         [DisplayName("Use IPv6 Addresses")]
         [DefaultValue(false)]
@@ -37,6 +35,16 @@ namespace Log2Console.Receiver
         {
             get { return _ipv6; }
             set { _ipv6 = value; }
+        }
+
+        private int _bufferSize = 10000;
+        [Category("Configuration")]
+        [DisplayName("Receive Buffer Size")]
+        [DefaultValue(10000)]
+        public int BufferSize
+        {
+            get { return _bufferSize; }
+            set { _bufferSize = value; }
         }
 
         #endregion
@@ -54,17 +62,18 @@ namespace Log2Console.Receiver
             }
         }
 
-        [NonSerialized] private Socket _socket;
+        [NonSerialized]
+        Socket _socket;
 
         public override void Initialize()
         {
             if (_socket != null) return;
 
-            _socket = new Socket(_ipv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork, SocketType.Stream,
-                ProtocolType.Tcp);
+            _socket = new Socket(_ipv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _socket.ExclusiveAddressUse = true;
             _socket.Bind(new IPEndPoint(_ipv6 ? IPAddress.IPv6Any : IPAddress.Any, _port));
             _socket.Listen(100);
+            _socket.ReceiveBufferSize = _bufferSize;
 
             var args = new SocketAsyncEventArgs();
             args.Completed += AcceptAsyncCompleted;
@@ -72,25 +81,26 @@ namespace Log2Console.Receiver
             _socket.AcceptAsync(args);
         }
 
-        private void AcceptAsyncCompleted(object sender, SocketAsyncEventArgs e)
+        void AcceptAsyncCompleted(object sender, SocketAsyncEventArgs e)
         {
             if (_socket == null || e.SocketError != SocketError.Success) return;
 
-            new Thread(Start) {IsBackground = true}.Start(e.AcceptSocket);
+            new Thread(Start) { IsBackground = true }.Start(e.AcceptSocket);
 
             e.AcceptSocket = null;
             _socket.AcceptAsync(e);
         }
 
-        private void Start(object newSocket)
+        void Start(object newSocket)
         {
             try
             {
-                using (var socket = (Socket) newSocket)
+                using (var socket = (Socket)newSocket)
                 using (var ns = new NetworkStream(socket, FileAccess.Read, false))
                     while (_socket != null)
                     {
                         var logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(ns, "TcpLogger");
+                        logMsg.RootLoggerName = logMsg.LoggerName;
                         logMsg.LoggerName = string.Format(":{1}.{0}", logMsg.LoggerName, _port);
 
                         if (Notifiable != null)

@@ -1,25 +1,19 @@
-﻿using System;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
+
 
 namespace Log2Console.UI
 {
-    internal class FlickerFreeListView : ListView
+    class FlickerFreeListView : ListView
     {
-        private const int WM_HSCROLL = 0x114;
-        private const int WM_VSCROLL = 0x115;
-        private const int WM_MOUSEWHEEL = 0x020A;
-
         public FlickerFreeListView()
         {
             // Activate double buffering
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.CacheText, true);
 
             // Enable the OnNotifyMessage event so we get a chance to filter out 
             // Windows messages before they get to the form's WndProc
-            SetStyle(ControlStyles.EnableNotifyMessage, true);
+            SetStyle(ControlStyles.EnableNotifyMessage, false);
         }
-
-        public event EventHandler Scroll;
 
         protected override void OnNotifyMessage(Message m)
         {
@@ -28,18 +22,6 @@ namespace Log2Console.UI
             {
                 base.OnNotifyMessage(m);
             }
-        }
-
-        protected void OnScroll()
-        {
-            Scroll?.Invoke(this, EventArgs.Empty);
-        }
-
-        protected override void WndProc(ref Message m)
-        {
-            base.WndProc(ref m);
-            if (m.Msg == WM_HSCROLL || m.Msg == WM_VSCROLL || m.Msg == WM_MOUSEWHEEL)
-                OnScroll();
         }
     }
 }

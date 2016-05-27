@@ -1,14 +1,17 @@
 using System;
-using System.Collections;
 using System.ComponentModel;
+using System.Collections;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
+
 using log4net.Appender;
 using log4net.Core;
+
 using Log2Console.Log;
+
 
 namespace Log2Console.Receiver
 {
@@ -17,35 +20,14 @@ namespace Log2Console.Receiver
     public class RemotingReceiver : BaseReceiver, RemotingAppender.IRemoteLoggingSink, ISerializable
     {
         private const string RemotingReceiverChannelName = "RemotingReceiverChannel";
+
+        [NonSerialized]
+        private IChannel _channel = null;
+
+        private string _sinkName = "LoggingSink";
+        private int _port = 7070;
         private bool _appendHostNameToLogger = true;
 
-        [NonSerialized] private IChannel _channel;
-
-        private int _port = 7070;
-        private string _sinkName = "LoggingSink";
-
-        /// <summary>
-        ///     Default ctor
-        /// </summary>
-        public RemotingReceiver()
-        {
-        }
-
-        #region Implementation of IRemoteLoggingSink
-
-        public void LogEvents(LoggingEvent[] events)
-        {
-            if ((events == null) || (events.Length == 0) || (Notifiable == null))
-                return;
-
-            var logMsgs = new LogMessage[events.Length];
-            for (var i = 0; i < events.Length; i++)
-                logMsgs[i] = CreateLogMessage(events[i]);
-
-            Notifiable.Notify(logMsgs);
-        }
-
-        #endregion Implementation of IRemoteLoggingSink
 
         [Category("Configuration")]
         [DisplayName("Remote Sink Name")]
@@ -72,62 +54,17 @@ namespace Log2Console.Receiver
             set { _appendHostNameToLogger = value; }
         }
 
-        #region Override implementation of MarshalByRefObject
 
         /// <summary>
-        ///     Obtains a lifetime service object to control the lifetime
-        ///     policy for this instance.
+        /// Default ctor
         /// </summary>
-        /// <returns><c>null</c> to indicate that this instance should live forever.</returns>
-        /// <remarks>
-        ///     <para>
-        ///         Obtains a lifetime service object to control the lifetime
-        ///         policy for this instance. This object should live forever
-        ///         therefore this implementation returns <c>null</c>.
-        ///     </para>
-        /// </remarks>
-        public override object InitializeLifetimeService()
-        {
-            return null;
-        }
-
-        #endregion Override implementation of MarshalByRefObject
-
-        protected LogMessage CreateLogMessage(LoggingEvent logEvent)
-        {
-            var logMsg = new LogMessage();
-
-            logMsg.LoggerName = _appendHostNameToLogger && logEvent.Properties.Contains(LoggingEvent.HostNameProperty)
-                ? string.Format("[Host: {0}].{1}", logEvent.Properties[LoggingEvent.HostNameProperty],
-                    logEvent.LoggerName)
-                : logEvent.LoggerName;
-
-            logMsg.ThreadName = logEvent.ThreadName;
-            logMsg.Message = logEvent.RenderedMessage;
-            logMsg.TimeStamp = logEvent.TimeStamp;
-            logMsg.Level = LogUtils.GetLogLevelInfo(logEvent.Level.Value);
-
-            // Per LoggingEvent.ExceptionObject, the exception object is not serialized, but the exception 
-            // text is available through LoggingEvent.GetExceptionString
-            logMsg.ExceptionString = logEvent.GetExceptionString();
-
-            // Copy properties as string
-            foreach (DictionaryEntry entry in logEvent.Properties)
-            {
-                if ((entry.Key == null) || (entry.Value == null))
-                    continue;
-
-                logMsg.Properties.Add(entry.Key.ToString(), entry.Value.ToString());
-            }
-
-            return logMsg;
-        }
+        public RemotingReceiver() { }
 
         #region ISerializable Members
 
         /// <summary>
-        ///     Constructor for Serialization
-        ///     N.B: Explicit implementation of ISerializable to mask SecurityIdentity Property of mother class
+        /// Constructor for Serialization
+        /// N.B: Explicit implementation of ISerializable to mask SecurityIdentity Property of mother class
         /// </summary>
         public RemotingReceiver(SerializationInfo info, StreamingContext context)
         {
@@ -136,8 +73,8 @@ namespace Log2Console.Receiver
         }
 
         /// <summary>
-        ///     ISerializable method override for deserialization
-        ///     N.B: Explicit implementation of ISerializable to mask SecurityIdentity Property of mother class
+        /// ISerializable method override for deserialization
+        /// N.B: Explicit implementation of ISerializable to mask SecurityIdentity Property of mother class
         /// </summary>
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
@@ -146,6 +83,7 @@ namespace Log2Console.Receiver
         }
 
         #endregion
+
 
         #region IReceiver Members
 
@@ -156,8 +94,7 @@ namespace Log2Console.Receiver
             {
                 return
                     "Configuration for log4net:" + Environment.NewLine +
-                    "<appender name=\"RemotingAppender\" type=\"log4net.Appender.RemotingAppender\" >" +
-                    Environment.NewLine +
+                    "<appender name=\"RemotingAppender\" type=\"log4net.Appender.RemotingAppender\" >" + Environment.NewLine +
                     "    <!--The remoting URL to the remoting server object-->" + Environment.NewLine +
                     "    <sink value=\"tcp://localhost:7070/LoggingSink\" />" + Environment.NewLine +
                     "    <!--Send all events, do not discard events when the buffer is full-->" + Environment.NewLine +
@@ -184,7 +121,7 @@ namespace Log2Console.Receiver
                 try
                 {
                     BinaryClientFormatterSinkProvider clientProvider = null;
-                    var serverProvider =
+                    BinaryServerFormatterSinkProvider serverProvider =
                         new BinaryServerFormatterSinkProvider();
                     serverProvider.TypeFilterLevel = TypeFilterLevel.Full;
 
@@ -202,13 +139,13 @@ namespace Log2Console.Receiver
                 }
             }
 
-            var serverType = RemotingServices.GetServerTypeForUri(_sinkName);
-            if ((serverType == null) || (serverType != typeof (RemotingAppender.IRemoteLoggingSink)))
+            Type serverType = RemotingServices.GetServerTypeForUri(_sinkName);
+            if ((serverType == null) || (serverType != typeof(RemotingAppender.IRemoteLoggingSink)))
             {
                 // Marshal Receiver
                 try
                 {
-                    RemotingServices.Marshal(this, _sinkName, typeof (RemotingAppender.IRemoteLoggingSink));
+                    RemotingServices.Marshal(this, _sinkName, typeof(RemotingAppender.IRemoteLoggingSink));
                 }
                 catch (Exception ex)
                 {
@@ -225,5 +162,81 @@ namespace Log2Console.Receiver
         }
 
         #endregion
+
+
+        #region Override implementation of MarshalByRefObject
+
+        /// <summary>
+        /// Obtains a lifetime service object to control the lifetime 
+        /// policy for this instance.
+        /// </summary>
+        /// <returns><c>null</c> to indicate that this instance should live forever.</returns>
+        /// <remarks>
+        /// <para>
+        /// Obtains a lifetime service object to control the lifetime 
+        /// policy for this instance. This object should live forever
+        /// therefore this implementation returns <c>null</c>.
+        /// </para>
+        /// </remarks>
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
+        #endregion Override implementation of MarshalByRefObject
+
+
+        #region Implementation of IRemoteLoggingSink
+
+        public void LogEvents(LoggingEvent[] events)
+        {
+            if ((events == null) || (events.Length == 0) || (Notifiable == null))
+                return;
+
+            LogMessage[] logMsgs = new LogMessage[events.Length];
+            for (int i = 0; i < events.Length; i++)
+                logMsgs[i] = CreateLogMessage(events[i]);
+
+            Notifiable.Notify(logMsgs);
+        }
+
+        #endregion Implementation of IRemoteLoggingSink
+
+
+        protected LogMessage CreateLogMessage(LoggingEvent logEvent)
+        {
+            LogMessage logMsg = new LogMessage();
+            if (_appendHostNameToLogger && logEvent.Properties.Contains(LoggingEvent.HostNameProperty))
+            {
+                logMsg.RootLoggerName = logEvent.Properties[LoggingEvent.HostNameProperty].ToString();
+                logMsg.LoggerName = String.Format("[Host: {0}].{1}", logEvent.Properties[LoggingEvent.HostNameProperty],
+                    logEvent.LoggerName);
+            }
+            else
+            {
+                logMsg.RootLoggerName = logEvent.LoggerName;
+                logMsg.LoggerName = logEvent.LoggerName;
+            }
+
+            logMsg.ThreadName = logEvent.ThreadName;
+            logMsg.Message = logEvent.RenderedMessage;
+            logMsg.TimeStamp = logEvent.TimeStamp;
+            logMsg.Level = LogUtils.GetLogLevelInfo(logEvent.Level.Value);
+
+            // Per LoggingEvent.ExceptionObject, the exception object is not serialized, but the exception 
+            // text is available through LoggingEvent.GetExceptionString
+            logMsg.ExceptionString = logEvent.GetExceptionString();
+
+            // Copy properties as string
+            foreach (DictionaryEntry entry in logEvent.Properties)
+            {
+                if ((entry.Key == null) || (entry.Value == null))
+                    continue;
+
+                logMsg.Properties.Add(entry.Key.ToString(), entry.Value.ToString());
+            }
+
+            return logMsg;
+        }
     }
 }

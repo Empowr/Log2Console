@@ -5,21 +5,27 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
+using Log2Console.Log;
+
+
 namespace Log2Console.Receiver
 {
     [Serializable]
     [DisplayName("UDP (IP v4 and v6)")]
     public class UdpReceiver : BaseReceiver
     {
-        private string _address = string.Empty;
+        [NonSerialized]
+        private Thread _worker;
+        [NonSerialized]
+        private UdpClient _udpClient;
+        [NonSerialized]
+        private IPEndPoint _remoteEndPoint;
+
         private bool _ipv6;
         private int _port = 7071;
+        private string _address = String.Empty;
+        private int _bufferSize = 10000;
 
-        [NonSerialized] private IPEndPoint _remoteEndPoint;
-
-        [NonSerialized] private UdpClient _udpClient;
-
-        [NonSerialized] private Thread _worker;
 
         [Category("Configuration")]
         [DisplayName("UDP Port Number")]
@@ -47,32 +53,14 @@ namespace Log2Console.Receiver
             set { _address = value; }
         }
 
-        private void Start()
+        [Category("Configuration")]
+        [DisplayName("Receive Buffer Size")]
+        public int BufferSize
         {
-            while ((_udpClient != null) && (_remoteEndPoint != null))
-            {
-                try
-                {
-                    var buffer = _udpClient.Receive(ref _remoteEndPoint);
-                    var loggingEvent = Encoding.UTF8.GetString(buffer);
-
-                    Console.WriteLine(loggingEvent);
-
-                    if (Notifiable == null)
-                        continue;
-
-                    var logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(loggingEvent, "UdpLogger");
-                    logMsg.LoggerName = string.Format("{0}_{1}", _remoteEndPoint.Address.ToString().Replace(".", "-"),
-                        logMsg.LoggerName);
-                    Notifiable.Notify(logMsg);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                    return;
-                }
-            }
+            get { return _bufferSize; }
+            set { _bufferSize = value; }
         }
+
 
         #region IReceiver Members
 
@@ -99,8 +87,8 @@ namespace Log2Console.Receiver
             // Init connexion here, before starting the thread, to know the status now
             _remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
             _udpClient = _ipv6 ? new UdpClient(_port, AddressFamily.InterNetworkV6) : new UdpClient(_port);
-
-            if (!string.IsNullOrEmpty(_address))
+            _udpClient.Client.ReceiveBufferSize = _bufferSize;
+            if (!String.IsNullOrEmpty(_address))
                 _udpClient.JoinMulticastGroup(IPAddress.Parse(_address));
 
             // We need a working thread
@@ -125,5 +113,38 @@ namespace Log2Console.Receiver
         }
 
         #endregion
+
+        public void Clear()
+        {
+        }
+
+        private void Start()
+        {
+            while ((_udpClient != null) && (_remoteEndPoint != null))
+            {
+                try
+                {
+                    byte[] buffer = _udpClient.Receive(ref _remoteEndPoint);
+                    string loggingEvent = Encoding.UTF8.GetString(buffer);
+
+                    //Console.WriteLine(loggingEvent);
+                    //  Console.WriteLine("Count: " + count++);
+
+                    if (Notifiable == null)
+                        continue;
+
+                    LogMessage logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(loggingEvent, "UdpLogger");
+                    logMsg.RootLoggerName = _remoteEndPoint.Address.ToString().Replace(".", "-");
+                    logMsg.LoggerName = string.Format("{0}_{1}", _remoteEndPoint.Address.ToString().Replace(".", "-"), logMsg.LoggerName);
+                    Notifiable.Notify(logMsg);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    return;
+                }
+            }
+        }
+
     }
 }

@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+
 using Log2Console.Log;
+
 
 namespace Log2Console.Receiver
 {
     /// <summary>
-    ///     This receiver watch a given file, like a 'tail' program, with one log event by line.
-    ///     Ideally the log events should use the log4j XML Schema layout.
+    /// This receiver watch a given file, like a 'tail' program, with one log event by line.
+    /// Ideally the log events should use the log4j XML Schema layout.
     /// </summary>
     [Serializable]
     [DisplayName("Log File (Flat or Log4j XML Formatted)")]
@@ -18,25 +20,26 @@ namespace Log2Console.Receiver
         public enum FileFormatEnums
         {
             Log4jXml,
-            Flat
+            Flat,
         }
 
+
+        [NonSerialized]
+        private FileSystemWatcher _fileWatcher;
+        [NonSerialized]
+        private StreamReader _fileReader;
+        [NonSerialized]
+        private long _lastFileLength;
+        [NonSerialized]
+        private string _filename;
+        [NonSerialized]
+        private string _fullLoggerName;
+
+        private string _fileToWatch = String.Empty;
         private FileFormatEnums _fileFormat;
-
-        [NonSerialized] private string _filename;
-
-        [NonSerialized] private StreamReader _fileReader;
-
-        private string _fileToWatch = string.Empty;
-
-        [NonSerialized] private FileSystemWatcher _fileWatcher;
-
-        [NonSerialized] private string _fullLoggerName;
-
-        [NonSerialized] private long _lastFileLength;
-
-        private string _loggerName;
         private bool _showFromBeginning;
+        private string _loggerName;
+
 
         [Category("Configuration")]
         [DisplayName("File to Watch")]
@@ -45,7 +48,7 @@ namespace Log2Console.Receiver
             get { return _fileToWatch; }
             set
             {
-                if (string.Compare(_fileToWatch, value, true) == 0)
+                if (String.Compare(_fileToWatch, value, true) == 0)
                     return;
 
                 _fileToWatch = value;
@@ -61,7 +64,7 @@ namespace Log2Console.Receiver
             get { return _fileFormat; }
             set { _fileFormat = value; }
         }
-
+        
         [Category("Configuration")]
         [DisplayName("Show from Beginning")]
         [Description("Show file contents from the beginning (not just newly appended lines)")]
@@ -72,7 +75,7 @@ namespace Log2Console.Receiver
             set
             {
                 _showFromBeginning = value;
-
+ 
                 if (value && _lastFileLength == 0)
                 {
                     ReadFile();
@@ -94,78 +97,6 @@ namespace Log2Console.Receiver
             }
         }
 
-        private void Restart()
-        {
-            Terminate();
-            Initialize();
-        }
-
-        private void ComputeFullLoggerName()
-        {
-            _fullLoggerName = string.Format("FileLogger.{0}",
-                string.IsNullOrEmpty(_loggerName)
-                    ? _filename.Replace('.', '_')
-                    : _loggerName);
-
-            DisplayName = string.IsNullOrEmpty(_loggerName)
-                ? string.Empty
-                : string.Format("Log File [{0}]", _loggerName);
-        }
-
-        private void OnFileChanged(object sender, FileSystemEventArgs e)
-        {
-            if (e.ChangeType != WatcherChangeTypes.Changed)
-                return;
-
-            ReadFile();
-        }
-
-        private void ReadFile()
-        {
-            if ((_fileReader == null) || (_fileReader.BaseStream.Length == _lastFileLength))
-                return;
-
-            // Seek to the last file length
-            _fileReader.BaseStream.Seek(_lastFileLength, SeekOrigin.Begin);
-
-            // Get last added lines
-            string line;
-            var sb = new StringBuilder();
-            var logMsgs = new List<LogMessage>();
-
-            while ((line = _fileReader.ReadLine()) != null)
-            {
-                if (_fileFormat == FileFormatEnums.Flat)
-                {
-                    var logMsg = new LogMessage();
-                    logMsg.LoggerName = _fullLoggerName;
-                    logMsg.ThreadName = "NA";
-                    logMsg.Message = line;
-                    logMsg.TimeStamp = DateTime.Now;
-                    logMsg.Level = LogLevels.Instance[LogLevel.Info];
-
-                    logMsgs.Add(logMsg);
-                }
-                else
-                {
-                    sb.Append(line);
-
-                    // This condition allows us to process events that spread over multiple lines
-                    if (line.Contains("</log4j:event>"))
-                    {
-                        var logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(sb.ToString(), _fullLoggerName);
-                        logMsgs.Add(logMsg);
-                        sb = new StringBuilder();
-                    }
-                }
-            }
-
-            // Notify the UI with the set of messages
-            Notifiable.Notify(logMsgs.ToArray());
-
-            // Update the last file length
-            _lastFileLength = _fileReader.BaseStream.Position;
-        }
 
         #region IReceiver Members
 
@@ -187,7 +118,7 @@ namespace Log2Console.Receiver
 
         public override void Initialize()
         {
-            if (string.IsNullOrEmpty(_fileToWatch))
+            if (String.IsNullOrEmpty(_fileToWatch))
                 return;
 
             _fileReader =
@@ -195,7 +126,7 @@ namespace Log2Console.Receiver
 
             _lastFileLength = _showFromBeginning ? 0 : _fileReader.BaseStream.Length;
 
-            var path = Path.GetDirectoryName(_fileToWatch);
+            string path = Path.GetDirectoryName(_fileToWatch);
             _filename = Path.GetFileName(_fileToWatch);
             _fileWatcher = new FileSystemWatcher(path, _filename);
             _fileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size;
@@ -220,15 +151,90 @@ namespace Log2Console.Receiver
 
             _lastFileLength = 0;
         }
-
+        
         public override void Attach(ILogMessageNotifiable notifiable)
         {
             base.Attach(notifiable);
-
+            
             if (_showFromBeginning)
                 ReadFile();
         }
 
         #endregion
+
+
+        private void Restart()
+        {
+            Terminate();
+            Initialize();
+        }
+
+        private void ComputeFullLoggerName()
+        {
+            _fullLoggerName = String.Format("FileLogger.{0}",
+                                            String.IsNullOrEmpty(_loggerName)
+                                                ? _filename.Replace('.', '_')
+                                                : _loggerName);
+
+            DisplayName = String.IsNullOrEmpty(_loggerName)
+                              ? String.Empty
+                              : String.Format("Log File [{0}]", _loggerName);
+        }
+
+        private void OnFileChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType != WatcherChangeTypes.Changed)
+                return;
+
+            ReadFile();
+        }
+
+        private void ReadFile()
+        {
+            if ((_fileReader == null) || (_fileReader.BaseStream.Length == _lastFileLength))
+                return;
+
+            // Seek to the last file length
+            _fileReader.BaseStream.Seek(_lastFileLength, SeekOrigin.Begin);
+
+            // Get last added lines
+            string line;
+            var sb = new StringBuilder();
+            List<LogMessage> logMsgs = new List<LogMessage>();
+            
+            while ((line = _fileReader.ReadLine()) != null)
+            {
+                if (_fileFormat == FileFormatEnums.Flat)
+                {
+                    LogMessage logMsg = new LogMessage();
+                    logMsg.RootLoggerName = _loggerName;
+                    logMsg.LoggerName = _fullLoggerName;
+                    logMsg.ThreadName = "NA";
+                    logMsg.Message = line;
+                    logMsg.TimeStamp = DateTime.Now;
+                    logMsg.Level = LogLevels.Instance[LogLevel.Info];
+
+                    logMsgs.Add(logMsg);
+                }
+                else
+                {
+                    sb.Append(line);
+
+                    // This condition allows us to process events that spread over multiple lines
+                    if (line.Contains("</log4j:event>"))
+                    {
+                        LogMessage logMsg = ReceiverUtils.ParseLog4JXmlLogEvent(sb.ToString(), _fullLoggerName);
+                        logMsgs.Add(logMsg);
+                        sb = new StringBuilder();
+                    }
+                }
+            }
+
+            // Notify the UI with the set of messages
+            Notifiable.Notify(logMsgs.ToArray());
+
+            // Update the last file length
+            _lastFileLength = _fileReader.BaseStream.Position;
+        }
     }
 }

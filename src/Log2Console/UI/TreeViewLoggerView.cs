@@ -1,6 +1,8 @@
-using System.Drawing;
 using System.Windows.Forms;
+using System.Drawing;
+
 using Log2Console.Log;
+
 
 namespace Log2Console.UI
 {
@@ -19,10 +21,11 @@ namespace Log2Console.UI
             _isRoot = false;
         }
 
+
         #region ILoggerView Members
 
         /// <summary>
-        ///     Clears this view and all child views.
+        /// Clears this view and all child views.
         /// </summary>
         public void Clear()
         {
@@ -53,7 +56,7 @@ namespace Log2Console.UI
         }
 
         /// <summary>
-        ///     Adds the new logger view as a child of the current view and returns the new view.
+        /// Adds the new logger view as a child of the current view and returns the new view.
         /// </summary>
         /// <param name="text">The text to initialize the view with.</param>
         /// <param name="logger">The logger that this instance is a view of.</param>
@@ -61,13 +64,20 @@ namespace Log2Console.UI
         public ILoggerView AddNew(string text, LoggerItem logger)
         {
             // Creating a new node.
-            var node = _isRoot ? _treeView.Nodes.Add(text, text) : _node.Nodes.Add(text, text);
+            TreeNode node = _isRoot ? _treeView.Nodes.Add(text, text) : _node.Nodes.Add(text, text);
 
             node.Tag = logger;
             node.Checked = true;
-
-            node.EnsureVisible();
-
+            if (_node != null && _node.Level == 0)
+            {
+                _node.ExpandAll();
+            }
+          //  node.EnsureVisible();
+            //if (_node != null)
+            //{
+            //    _node.Collapse(false);
+            //}
+            
             return new TreeViewLoggerView(_treeView, node);
         }
 
@@ -84,12 +94,15 @@ namespace Log2Console.UI
         }
 
         /// <summary>
-        ///     Gets or sets the text of the view. The text is what is shown to the user.
+        /// Gets or sets the text of the view. The text is what is shown to the user.
         /// </summary>
         /// <value>The text.</value>
         public string Text
         {
-            get { return (_isRoot ? "(root)" : _node.Text); }
+            get
+            {
+                return (_isRoot ? "(root)" : _node.Text);
+            }
             set
             {
                 if (!_isRoot)
@@ -100,13 +113,16 @@ namespace Log2Console.UI
         }
 
         /// <summary>
-        ///     Gets or sets a value indicating whether this <see cref="ILoggerView" /> is shown
-        ///     as highlighted.
+        /// Gets or sets a value indicating whether this <see cref="ILoggerView"/> is shown
+        /// as highlighted.
         /// </summary>
         /// <value><c>true</c> if highlighted; otherwise, <c>false</c>.</value>
         public bool Highlight
         {
-            get { return (_isRoot ? false : _node.BackColor == Color.LightBlue); }
+            get
+            {
+                return (_isRoot ? false : _node.BackColor == Color.LightBlue);
+            }
             set
             {
                 if (!_isRoot)
@@ -120,12 +136,15 @@ namespace Log2Console.UI
         }
 
         /// <summary>
-        ///     Gets or sets a value indicating whether this <see cref="ILoggerView" /> is enabled.
+        /// Gets or sets a value indicating whether this <see cref="ILoggerView"/> is enabled.
         /// </summary>
         /// <value><c>true</c> if enabled; otherwise, <c>false</c>.</value>
         public bool Enabled
         {
-            get { return (_isRoot ? true : _node.Checked); }
+            get
+            {
+                return (_isRoot ? true : _node.Checked);
+            }
             set
             {
                 if (!_isRoot)
@@ -137,12 +156,15 @@ namespace Log2Console.UI
 
         #endregion
 
+
         #region Private Members
 
-        private readonly TreeView _treeView;
-        private readonly TreeNode _node;
-        private readonly bool _isRoot;
+        private TreeView _treeView;
+        private TreeNode _node;
+        private bool _isRoot = false;
 
         #endregion
+
+
     }
 }

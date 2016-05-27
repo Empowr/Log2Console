@@ -5,9 +5,6 @@ namespace Microsoft.WindowsAPICodePack.Internal
 {
     internal class TaskbarWindow : IDisposable
     {
-        public readonly IntPtr WindowHandle;
-        private ThumbnailToolbarProxyWindow _thumbnailToolbarProxyWindow;
-
         public TaskbarWindow(IntPtr userWindowHandle, ThumbnailToolbarButton[] buttons)
         {
             if (userWindowHandle == IntPtr.Zero)
@@ -17,21 +14,20 @@ namespace Microsoft.WindowsAPICodePack.Internal
                 throw new ArgumentException("buttons");
 
             // Create our proxy window
-            _thumbnailToolbarProxyWindow = new ThumbnailToolbarProxyWindow(userWindowHandle, buttons)
-                                           {
-                                               TaskbarWindow
-                                                   = this
-                                           };
+            _thumbnailToolbarProxyWindow = new ThumbnailToolbarProxyWindow(userWindowHandle, buttons) { TaskbarWindow = this };
 
             // Set our current state
             ThumbnailButtons = buttons;
             WindowHandle = userWindowHandle;
         }
 
+        ThumbnailToolbarProxyWindow _thumbnailToolbarProxyWindow;
+
+        public readonly IntPtr WindowHandle;
+
         #region ThumbnailButtons Property
 
-        private ThumbnailToolbarButton[] _thumbnailButtons;
-
+        ThumbnailToolbarButton[] _thumbnailButtons;
         public ThumbnailToolbarButton[] ThumbnailButtons
         {
             get { return _thumbnailButtons; }
@@ -43,7 +39,7 @@ namespace Microsoft.WindowsAPICodePack.Internal
             }
         }
 
-        private void UpdateHandle(ThumbnailToolbarButton button)
+        void UpdateHandle(ThumbnailToolbarButton button)
         {
             button.WindowHandle = _thumbnailToolbarProxyWindow.WindowHandle;
             button.AddedToTaskbar = false;
@@ -59,7 +55,7 @@ namespace Microsoft.WindowsAPICodePack.Internal
         }
 
         /// <summary>
-        ///     Release the native objects.
+        /// Release the native objects.
         /// </summary>
         public void Dispose()
         {
@@ -67,7 +63,7 @@ namespace Microsoft.WindowsAPICodePack.Internal
             GC.SuppressFinalize(this);
         }
 
-        private void Dispose(bool disposing)
+        void Dispose(bool disposing)
         {
             if (!disposing) return;
 

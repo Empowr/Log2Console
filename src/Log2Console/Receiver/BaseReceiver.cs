@@ -1,15 +1,20 @@
 using System;
 using System.ComponentModel;
+
 using Log2Console.Log;
+
 
 namespace Log2Console.Receiver
 {
     [Serializable]
     public abstract class BaseReceiver : MarshalByRefObject, IReceiver
     {
-        [NonSerialized] private string _displayName;
+        [NonSerialized]
+        protected ILogMessageNotifiable Notifiable;
 
-        [NonSerialized] protected ILogMessageNotifiable Notifiable;
+        [NonSerialized]
+        private string _displayName;
+
 
         #region IReceiver Members
 

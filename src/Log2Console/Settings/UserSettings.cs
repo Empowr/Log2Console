@@ -1,43 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.ComponentModel;
 using System.Drawing;
-using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
+
 using Log2Console.Log;
 using Log2Console.Receiver;
+
 
 namespace Log2Console.Settings
 {
     [Serializable]
-    public sealed class LayoutSettings
-    {
-        public Rectangle WindowPosition { get; set; }
-        public FormWindowState WindowState { get; set; }
-        public bool ShowLogDetailView { get; set; }
-        public Size LogDetailViewSize { get; set; }
-        public bool ShowLoggerTree { get; set; }
-        public Size LoggerTreeSize { get; set; }
-        public int[] LogListViewColumnsWidths { get; set; }
-
-        public void Set(Rectangle position, FormWindowState state, Control detailView, Control loggerTree)
-        {
-            WindowPosition = position;
-            WindowState = state;
-            ShowLogDetailView = detailView.Visible;
-            LogDetailViewSize = detailView.Size;
-            ShowLoggerTree = loggerTree.Visible;
-            LoggerTreeSize = loggerTree.Size;
-        }
-    }
-
-
-    [Serializable]
     public sealed class UserSettings
     {
-        [NonSerialized] private const string SettingsFileName = "UserSettings.dat";
-
         internal static readonly Color DefaultTraceLevelColor = Color.Gray;
         internal static readonly Color DefaultDebugLevelColor = Color.Black;
         internal static readonly Color DefaultInfoLevelColor = Color.Green;
@@ -45,44 +22,100 @@ namespace Log2Console.Settings
         internal static readonly Color DefaultErrorLevelColor = Color.Red;
         internal static readonly Color DefaultFatalLevelColor = Color.Purple;
 
-        [NonSerialized] private static UserSettings _instance;
+        private static readonly FieldType[] DefaultColumnConfiguration =
+        {
+            new FieldType(LogMessageField.TimeStamp, "Time"),
+            new FieldType(LogMessageField.Level, "Level"),
+            new FieldType(LogMessageField.RootLoggerName, "RootLoggerName"),
+            new FieldType(LogMessageField.ThreadName, "Thread"),
+            new FieldType(LogMessageField.Message, "Message"),
+        };
 
-        private bool _alwaysOnTop;
-        private bool _autoScrollToLastLog = true;
-        private Color _debugLevelColor = DefaultDebugLevelColor;
-        private Font _defaultFont;
-        private Color _errorLevelColor = DefaultErrorLevelColor;
-        private Color _fatalLevelColor = DefaultFatalLevelColor;
-        private bool _groupLogMessages;
-        private bool _hideTaskbarIcon;
+        private static readonly FieldType[] DefaultDetailsMessageConfiguration =
+        {
+            new FieldType(LogMessageField.TimeStamp, "Time"),
+            new FieldType(LogMessageField.Level, "Level"),
+            new FieldType(LogMessageField.RootLoggerName, "RootLoggerName"),
+            new FieldType(LogMessageField.ThreadName, "Thread"),
+            new FieldType(LogMessageField.Message, "Message"),
+        };
+
+        private static readonly FieldType[] DefaultCsvColumnHeaderConfiguration =
+        {
+            new FieldType(LogMessageField.SequenceNr, "sequence"),
+            new FieldType(LogMessageField.TimeStamp, "time"),
+            new FieldType(LogMessageField.Level, "level"),
+            new FieldType(LogMessageField.ThreadName, "thread"),
+            new FieldType(LogMessageField.CallSiteClass, "class"),
+            new FieldType(LogMessageField.CallSiteMethod, "method"),
+            new FieldType(LogMessageField.Message, "message"),
+            new FieldType(LogMessageField.Exception, "exception"),
+            new FieldType(LogMessageField.SourceFileName, "file")
+        };
+
+        [NonSerialized]
+        private const string SettingsFileName = "UserSettings.dat";
+
+        [NonSerialized]
+        private Dictionary<string, int> _columnProperties = new Dictionary<string, int>();
+
+        [NonSerialized]
+        private Dictionary<string, FieldType> _csvHeaderFieldTypes;
+
+        [NonSerialized]
+        private Dictionary<string, string> _sourceCodeLocationMap;
+
+        private static UserSettings _instance;
+
+        private bool _recursivlyEnableLoggers = true;
+        private bool _hideTaskbarIcon = false;
+        private bool _notifyNewLogWhenHidden = true;
+        private bool _alwaysOnTop = false;
+        private uint _transparency = 100;
         private bool _highlightLogger = true;
         private bool _highlightLogMessages = true;
-        private Color _infoLevelColor = DefaultInfoLevelColor;
-        private LayoutSettings _layout = new LayoutSettings();
-        private Font _logDetailFont;
-        private Font _loggerTreeFont;
-        private LogLevelInfo _logLevelInfo;
+        private FieldType[] _columnConfiguration;
+        private FieldType[] _messageDetailConfiguration;
+
+
+        private FieldType[] _csvColumnHeaderFields;
+        private SourceFileLocation[] _sourceLocationMapConfiguration;
+        private bool _autoScrollToLastLog = true;
+        private bool _groupLogMessages = false;
+        private int _messageCycleCount = 0;
+        private string _timeStampFormatString = "yyyy-MM-dd HH:mm:ss.ffff";
+
+        private Font _defaultFont = null;
+        private Font _logListFont = null;
+        private Font _logDetailFont = null;
+        private Font _loggerTreeFont = null;
+
         private Color _logListBackColor = Color.Empty;
-        private Font _logListFont;
-        private int _messageCycleCount;
-        private bool _msgDetailsException = true;
-        private bool _msgDetailsProperties;
-        private bool _notifyNewLogWhenHidden = true;
-        private List<IReceiver> _receivers = new List<IReceiver>();
-        private bool _recursivlyEnableLoggers = true;
-        private string _timeStampFormatString = "G";
+        private Color _logMessageBackColor = Color.Empty;
+
         private Color _traceLevelColor = DefaultTraceLevelColor;
-        private uint _transparency = 100;
+        private Color _debugLevelColor = DefaultDebugLevelColor;
+        private Color _infoLevelColor = DefaultInfoLevelColor;
         private Color _warnLevelColor = DefaultWarnLevelColor;
+        private Color _errorLevelColor = DefaultErrorLevelColor;
+        private Color _fatalLevelColor = DefaultFatalLevelColor;
+
+        private bool _msgDetailsProperties = false;
+        private bool _msgDetailsException = true;
+
+        private LogLevelInfo _logLevelInfo;
+        private List<IReceiver> _receivers = new List<IReceiver>();
+        private LayoutSettings _layout = new LayoutSettings();
+
 
         private UserSettings()
         {
             // Set default values
-            _logLevelInfo = LogLevels.Instance[(int) LogLevel.Trace];
+            _logLevelInfo = LogLevels.Instance[(int)LogLevel.Trace];
         }
 
         /// <summary>
-        ///     Creates and returns an exact copy of the settings.
+        /// Creates and returns an exact copy of the settings.
         /// </summary>
         /// <returns></returns>
         public UserSettings Clone()
@@ -90,9 +123,9 @@ namespace Log2Console.Settings
             // We're going to serialize and deserialize to make the copy. That
             // way if we add new properties and/or settings, we don't have to 
             // maintain a copy constructor.
-            var formatter = new BinaryFormatter();
+            BinaryFormatter formatter = new BinaryFormatter();
 
-            using (var ms = new MemoryStream())
+            using (MemoryStream ms = new MemoryStream())
             {
                 // Serialize the object.
                 formatter.Serialize(ms, this);
@@ -112,21 +145,21 @@ namespace Log2Console.Settings
 
         public static bool Load()
         {
-            var ok = false;
+            bool ok = false;
 
             _instance = new UserSettings();
 
-            var settingsFilePath = GetSettingsFilePath();
+            string settingsFilePath = GetSettingsFilePath();
             if (!File.Exists(settingsFilePath))
                 return ok;
 
             try
             {
-                using (var fs = new FileStream(settingsFilePath, FileMode.Open))
+                using (FileStream fs = new FileStream(settingsFilePath, FileMode.Open))
                 {
                     if (fs.Length > 0)
                     {
-                        var bf = new BinaryFormatter();
+                        BinaryFormatter bf = new BinaryFormatter();
                         _instance = bf.Deserialize(fs) as UserSettings;
 
                         // During 1st load, some members are set to null
@@ -161,9 +194,9 @@ namespace Log2Console.Settings
 
         private static string GetSettingsFilePath()
         {
-            var userDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string userDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-            var di = new DirectoryInfo(userDir);
+            DirectoryInfo di = new DirectoryInfo(userDir);
             di = di.CreateSubdirectory("Log2Console");
 
             return di.FullName + Path.DirectorySeparatorChar + SettingsFileName;
@@ -171,18 +204,18 @@ namespace Log2Console.Settings
 
         public void Save()
         {
-            var settingsFilePath = GetSettingsFilePath();
+            string settingsFilePath = GetSettingsFilePath();
 
-            using (var fs = new FileStream(settingsFilePath, FileMode.Create))
+            using (FileStream fs = new FileStream(settingsFilePath, FileMode.Create))
             {
-                var bf = new BinaryFormatter();
+                BinaryFormatter bf = new BinaryFormatter();
                 bf.Serialize(fs, this);
             }
         }
 
         public void Close()
         {
-            foreach (var receiver in _receivers)
+            foreach (IReceiver receiver in _receivers)
             {
                 receiver.Detach();
                 receiver.Terminate();
@@ -234,6 +267,47 @@ namespace Log2Console.Settings
             set { _highlightLogMessages = value; }
         }
 
+        [Category("Columns")]
+        [DisplayName("Column Settings")]
+        [Description("Configure which Columns to Display")]
+        public FieldType[] ColumnConfiguration
+        {
+            get { return _columnConfiguration ?? (ColumnConfiguration = DefaultColumnConfiguration); }
+            set
+            {
+                _columnConfiguration = value;
+                UpdateColumnPropeties();
+            }
+        }
+
+
+        [Category("Columns")]
+        [DisplayName("CSV File Header Column Settings")]
+        [Description("Configures which columns maps to which fields when auto detecting the CSV structure based on the header")]
+        public FieldType[] CsvHeaderColumns
+        {
+            get { return _csvColumnHeaderFields ?? (CsvHeaderColumns = DefaultCsvColumnHeaderConfiguration); }
+            set
+            {
+                _csvColumnHeaderFields = value;
+                UpdateCsvColumnHeader();
+            }
+        }
+
+        [Category("Source File Configuration")]
+        [DisplayName("Source Location")]
+        [Description("Map the Log File Location to the Local Source Code Location")]
+        public SourceFileLocation[] SourceLocationMapConfiguration
+        {
+            get { return _sourceLocationMapConfiguration; }
+            set
+            {
+                _sourceLocationMapConfiguration = value;
+                UpdateSourceCodeLocationMap();
+            }
+        }
+
+
         [Category("Notification")]
         [Description("A balloon tip will be displayed when a new log message arrives and the window is hidden.")]
         [DisplayName("Notify New Log When Hidden")]
@@ -251,6 +325,7 @@ namespace Log2Console.Settings
             get { return _autoScrollToLastLog; }
             set { _autoScrollToLastLog = value; }
         }
+
 
         [Category("Logging")]
         [Description("Groups the log messages based on the Logger Name.")]
@@ -271,9 +346,7 @@ namespace Log2Console.Settings
         }
 
         [Category("Logging")]
-        [Description(
-            "Defines the format to be used to display the log message timestamps (cf. DateTime.ToString(format) in the .NET Framework."
-            )]
+        [Description("Defines the format to be used to display the log message timestamps (cf. DateTime.ToString(format) in the .NET Framework.")]
         [DisplayName("TimeStamp Format String")]
         public string TimeStampFormatString
         {
@@ -283,13 +356,12 @@ namespace Log2Console.Settings
                 // Check validity
                 try
                 {
-                    var str = DateTime.Now.ToString(value); // If error, will throw FormatException
+                    string str = DateTime.Now.ToString(value); // If error, will throw FormatException
                     _timeStampFormatString = value;
                 }
                 catch (FormatException ex)
                 {
-                    MessageBox.Show(Form.ActiveForm, ex.Message, Form.ActiveForm.Text, MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                    MessageBox.Show(Form.ActiveForm, ex.Message, Form.ActiveForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     _timeStampFormatString = "G"; // Back to default
                 }
             }
@@ -302,6 +374,18 @@ namespace Log2Console.Settings
         {
             get { return _recursivlyEnableLoggers; }
             set { _recursivlyEnableLoggers = value; }
+        }
+
+        [Category("Message Details")]
+        [DisplayName("Details information")]
+        [Description("Configure which information to Display in the message details")]
+        public FieldType[] MessageDetailConfiguration
+        {
+            get { return _messageDetailConfiguration ?? (MessageDetailConfiguration = DefaultDetailsMessageConfiguration); }
+            set
+            {
+                _messageDetailConfiguration = value;
+            }
         }
 
         [Category("Message Details")]
@@ -367,6 +451,16 @@ namespace Log2Console.Settings
             set { _logListBackColor = value; }
         }
 
+        [Category("Colors")]
+        [Description("Set the Background Color of the Log Message details.")]
+        [DisplayName("Log Message details Background Color")]
+        public Color LogMessageBackColor
+        {
+            get { return _logMessageBackColor; }
+            set { _logMessageBackColor = value; }
+        }
+
+
         [Category("Log Level Colors")]
         [DisplayName("1 - Trace Level Color")]
         public Color TraceLevelColor
@@ -415,8 +509,9 @@ namespace Log2Console.Settings
             set { _fatalLevelColor = value; }
         }
 
+
         /// <summary>
-        ///     This setting is not available through the Settings PropertyGrid.
+        /// This setting is not available through the Settings PropertyGrid.
         /// </summary>
         [Browsable(false)]
         internal LogLevelInfo LogLevelInfo
@@ -426,7 +521,7 @@ namespace Log2Console.Settings
         }
 
         /// <summary>
-        ///     This setting is not available through the Settings PropertyGrid.
+        /// This setting is not available through the Settings PropertyGrid.
         /// </summary>
         [Browsable(false)]
         internal List<IReceiver> Receivers
@@ -436,13 +531,84 @@ namespace Log2Console.Settings
         }
 
         /// <summary>
-        ///     This setting is not available through the Settings PropertyGrid.
+        /// This setting is not available through the Settings PropertyGrid.
         /// </summary>
         [Browsable(false)]
         internal LayoutSettings Layout
         {
             get { return _layout; }
             set { _layout = value; }
+        }
+
+        [Browsable(false)]
+        public Dictionary<string, int> ColumnProperties
+        {
+            get
+            {
+                if (_columnProperties == null)
+                    UpdateColumnPropeties();
+                return _columnProperties;
+            }
+            set { _columnProperties = value; }
+        }
+
+        [Browsable(false)]
+        public Dictionary<string, FieldType> CsvHeaderFieldTypes
+        {
+            get
+            {
+                if (_csvHeaderFieldTypes == null)
+                    UpdateCsvColumnHeader();
+                return _csvHeaderFieldTypes;
+            }
+            set { _csvHeaderFieldTypes = value; }
+        }
+
+        [Browsable(false)]
+        public Dictionary<string, string> SourceFileLocationMap
+        {
+            get
+            {
+                if (_sourceCodeLocationMap == null)
+                    UpdateSourceCodeLocationMap();
+                return _sourceCodeLocationMap;
+            }
+            set { _sourceCodeLocationMap = value; }
+        }
+
+        private void UpdateColumnPropeties()
+        {
+            _columnProperties = new Dictionary<string, int>();
+            for (int i = 0; i < ColumnConfiguration.Length; i++)
+            {
+                try
+                {
+                    if (ColumnConfiguration[i].Field == LogMessageField.Properties)
+                        _columnProperties.Add(ColumnConfiguration[i].Property, i);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error Configuring Columns");
+                }
+            }
+        }
+
+        private void UpdateCsvColumnHeader()
+        {
+            _csvHeaderFieldTypes = new Dictionary<string, FieldType>();
+            foreach (var column in CsvHeaderColumns)
+            {
+                _csvHeaderFieldTypes.Add(column.Name, column);
+            }
+        }
+
+        private void UpdateSourceCodeLocationMap()
+        {
+            _sourceCodeLocationMap = new Dictionary<string, string>();
+            foreach (var map in SourceLocationMapConfiguration)
+            {
+                _sourceCodeLocationMap.Add(map.LogSource, map.LocalSource);
+            }
         }
     }
 }

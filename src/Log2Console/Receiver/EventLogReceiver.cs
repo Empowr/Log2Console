@@ -1,7 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+
 using Log2Console.Log;
+
 
 namespace Log2Console.Receiver
 {
@@ -9,15 +11,14 @@ namespace Log2Console.Receiver
     [DisplayName("Windows Event Log")]
     public class EventLogReceiver : BaseReceiver
     {
-        private bool _appendHostNameToLogger = true;
-
-        [NonSerialized] private string _baseLoggerName;
-
-        [NonSerialized] private EventLog _eventLog;
+        [NonSerialized]
+        private EventLog _eventLog;
 
         private string _logName;
         private string _machineName = ".";
         private string _source;
+        private bool _appendHostNameToLogger = true;
+
 
         [Category("Configuration")]
         [DisplayName("Event Log Name")]
@@ -55,43 +56,9 @@ namespace Log2Console.Receiver
             set { _appendHostNameToLogger = value; }
         }
 
-        private void EventLogOnEntryWritten(object sender, EntryWrittenEventArgs entryWrittenEventArgs)
-        {
-            var logMsg = new LogMessage();
+        [NonSerialized]
+        private string _baseLoggerName;
 
-            logMsg.LoggerName = string.IsNullOrEmpty(entryWrittenEventArgs.Entry.Source)
-                ? _baseLoggerName
-                : string.Format("{0}.{1}", _baseLoggerName, entryWrittenEventArgs.Entry.Source);
-
-            logMsg.Message = entryWrittenEventArgs.Entry.Message;
-            logMsg.TimeStamp = entryWrittenEventArgs.Entry.TimeGenerated;
-            logMsg.Level = LogUtils.GetLogLevelInfo(GetLogLevel(entryWrittenEventArgs.Entry.EntryType));
-            logMsg.ThreadName = entryWrittenEventArgs.Entry.InstanceId.ToString();
-
-            if (!string.IsNullOrEmpty(entryWrittenEventArgs.Entry.Category))
-                logMsg.Properties.Add("Category", entryWrittenEventArgs.Entry.Category);
-            if (!string.IsNullOrEmpty(entryWrittenEventArgs.Entry.UserName))
-                logMsg.Properties.Add("User Name", entryWrittenEventArgs.Entry.UserName);
-
-            Notifiable.Notify(logMsg);
-        }
-
-        private static LogLevel GetLogLevel(EventLogEntryType entryType)
-        {
-            switch (entryType)
-            {
-                case EventLogEntryType.Warning:
-                    return LogLevel.Warn;
-                case EventLogEntryType.FailureAudit:
-                case EventLogEntryType.Error:
-                    return LogLevel.Error;
-                case EventLogEntryType.SuccessAudit:
-                case EventLogEntryType.Information:
-                    return LogLevel.Info;
-                default:
-                    return LogLevel.None;
-            }
-        }
 
         #region Overrides of BaseReceiver
 
@@ -107,16 +74,17 @@ namespace Log2Console.Receiver
 
         public override void Initialize()
         {
-            if (string.IsNullOrEmpty(MachineName))
+            if (String.IsNullOrEmpty(MachineName))
                 MachineName = ".";
 
             _eventLog = new EventLog(LogName, MachineName, Source);
             _eventLog.EntryWritten += EventLogOnEntryWritten;
             _eventLog.EnableRaisingEvents = true;
 
-            _baseLoggerName = AppendHostNameToLogger && !string.IsNullOrEmpty(MachineName) && (MachineName != ".")
-                ? string.Format("[Host: {0}].{1}", MachineName, LogName)
-                : LogName;
+            _baseLoggerName = AppendHostNameToLogger && !String.IsNullOrEmpty(MachineName) && (MachineName != ".")
+                                    ? String.Format("[Host: {0}].{1}", MachineName, LogName)
+                                    : LogName;
+
         }
 
         public override void Terminate()
@@ -127,5 +95,41 @@ namespace Log2Console.Receiver
         }
 
         #endregion
+
+
+        private void EventLogOnEntryWritten(object sender, EntryWrittenEventArgs entryWrittenEventArgs)
+        {
+            LogMessage logMsg = new LogMessage();
+            logMsg.RootLoggerName = _baseLoggerName;
+            logMsg.LoggerName = String.IsNullOrEmpty(entryWrittenEventArgs.Entry.Source)
+                                    ? _baseLoggerName
+                                    : String.Format("{0}.{1}", _baseLoggerName, entryWrittenEventArgs.Entry.Source);
+
+            logMsg.Message = entryWrittenEventArgs.Entry.Message;
+            logMsg.TimeStamp = entryWrittenEventArgs.Entry.TimeGenerated;
+            logMsg.Level = LogUtils.GetLogLevelInfo(GetLogLevel(entryWrittenEventArgs.Entry.EntryType));
+            logMsg.ThreadName = entryWrittenEventArgs.Entry.InstanceId.ToString();
+
+            if (!String.IsNullOrEmpty(entryWrittenEventArgs.Entry.Category))
+                logMsg.Properties.Add("Category", entryWrittenEventArgs.Entry.Category);
+            if (!String.IsNullOrEmpty(entryWrittenEventArgs.Entry.UserName))
+                logMsg.Properties.Add("User Name", entryWrittenEventArgs.Entry.UserName);
+
+            Notifiable.Notify(logMsg);
+        }
+
+        private static LogLevel GetLogLevel(EventLogEntryType entryType)
+        {
+            switch (entryType)
+            {
+                case EventLogEntryType.Warning: return LogLevel.Warn;
+                case EventLogEntryType.FailureAudit:
+                case EventLogEntryType.Error: return LogLevel.Error;
+                case EventLogEntryType.SuccessAudit:
+                case EventLogEntryType.Information: return LogLevel.Info;
+                default:
+                    return LogLevel.None;
+            }
+        }
     }
 }

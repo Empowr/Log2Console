@@ -10,10 +10,11 @@ namespace Log2Console.Receiver
     [DisplayName("Silverlight Socket Policy")]
     public class SLPolicyServerReceiver : BaseReceiver
     {
-        private int _portFrom = 4502;
-        private int _portTo = 4532;
+        [NonSerialized]
+        private Socket _socket;
 
-        [NonSerialized] private Socket _socket;
+        int _portFrom = 4502;
+        int _portTo = 4532;
 
         [Category("Configuration")]
         [DisplayName("TCP Port From")]
@@ -38,13 +39,15 @@ namespace Log2Console.Receiver
         [Browsable(false)]
         public override string SampleClientConfig
         {
-            get { return "This receiver allows Silverlight client to use sockets"; }
+            get
+            {
+                return "This receiver allows Silverlight client to use sockets";
+            }
         }
 
-        private const string PolicyRequestString = "<policy-file-request/>";
-
-        private const string PolicyTemplate =
-            @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+        const string PolicyRequestString = "<policy-file-request/>";
+        const string PolicyTemplate =
+      @"<?xml version=""1.0"" encoding=""utf-8"" ?>
 <access-policy>                                            
 <cross-domain-access>                                                
 <policy>                                                   
@@ -56,7 +59,7 @@ namespace Log2Console.Receiver
 </cross-domain-access>                                        
 </access-policy>";
 
-        private byte[] _policy;
+        byte[] _policy;
 
         public override void Initialize()
         {
@@ -75,7 +78,7 @@ namespace Log2Console.Receiver
             _socket.AcceptAsync(args);
         }
 
-        private void AcceptAsyncCompleted(object sender, SocketAsyncEventArgs e)
+        void AcceptAsyncCompleted(object sender, SocketAsyncEventArgs e)
         {
             if (_socket == null) return;
 
@@ -87,9 +90,9 @@ namespace Log2Console.Receiver
             ProcessRequest(socket);
         }
 
-        private void ProcessRequest(Socket socket)
+        void ProcessRequest(Socket socket)
         {
-            using (var client = new TcpClient {Client = socket, ReceiveTimeout = 5000})
+            using (var client = new TcpClient { Client = socket, ReceiveTimeout = 5000 })
             using (var s = client.GetStream())
             {
                 var buffer = new byte[PolicyRequestString.Length];

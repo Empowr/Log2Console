@@ -1,3 +1,5 @@
+using System.Windows.Forms;
+
 namespace Log2Console
 {
     partial class MainForm
@@ -55,6 +57,7 @@ namespace Log2Console
             this.settingsBtn = new System.Windows.Forms.ToolStripButton();
             this.receiversBtn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator14 = new System.Windows.Forms.ToolStripSeparator();
+            this.quickLoadBtn = new System.Windows.Forms.ToolStripButton();
             this.saveBtn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutBtn = new System.Windows.Forms.ToolStripButton();
@@ -74,6 +77,9 @@ namespace Log2Console
             this.closeLoggersPanelBtn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.clearLoggersBtn = new System.Windows.Forms.ToolStripButton();
+            this.collapseAllBtn = new System.Windows.Forms.ToolStripButton();
+            this.dactivateSourcesBtn = new System.Windows.Forms.ToolStripButton();
+            this.keepHighlightBtn = new System.Windows.Forms.ToolStripButton();
             this.loggerSplitter = new System.Windows.Forms.Splitter();
             this.appNotifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.trayContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -84,8 +90,10 @@ namespace Log2Console
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.exitTrayMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logDetailPanel = new System.Windows.Forms.Panel();
+            this.tabControlDetail = new System.Windows.Forms.TabControl();
+            this.tabMessage = new System.Windows.Forms.TabPage();
             this.logDetailInnerPanel = new System.Windows.Forms.Panel();
-            this.logDetailTextBox = new System.Windows.Forms.TextBox();
+            this.logDetailTextBox = new System.Windows.Forms.RichTextBox();
             this.logDetailToolStrip = new System.Windows.Forms.ToolStrip();
             this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             this.closeLogDetailPanelBtn = new System.Windows.Forms.ToolStripButton();
@@ -94,16 +102,29 @@ namespace Log2Console
             this.zoomInLogDetailsBtn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.copyLogDetailBtn = new System.Windows.Forms.ToolStripButton();
+            this.tabExceptions = new System.Windows.Forms.TabPage();
+            this.tbExceptions = new RichTextBoxLinks.RichTextBoxEx();
+            this.tabSource = new System.Windows.Forms.TabPage();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.textEditorSourceCode = new ICSharpCode.TextEditor.TextEditorControl();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStripLabel5 = new System.Windows.Forms.ToolStripLabel();
+            this.lbFileName = new System.Windows.Forms.ToolStripLabel();
+            this.btnOpenFileInVS = new System.Windows.Forms.ToolStripButton();
             this.logDetailSplitter = new System.Windows.Forms.Splitter();
             this.loggerTreeContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.deleteLoggerTreeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator16 = new System.Windows.Forms.ToolStripSeparator();
             this.deleteAllLoggerTreeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.logListView = new Log2Console.UI.FlickerFreeListView();
+            this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader8 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.mainToolStrip.SuspendLayout();
             this.loggerPanel.SuspendLayout();
@@ -111,14 +132,19 @@ namespace Log2Console
             this.loggersToolStrip.SuspendLayout();
             this.trayContextMenuStrip.SuspendLayout();
             this.logDetailPanel.SuspendLayout();
+            this.tabControlDetail.SuspendLayout();
+            this.tabMessage.SuspendLayout();
             this.logDetailInnerPanel.SuspendLayout();
             this.logDetailToolStrip.SuspendLayout();
+            this.tabExceptions.SuspendLayout();
+            this.tabSource.SuspendLayout();
+            this.panel1.SuspendLayout();
+            this.toolStrip1.SuspendLayout();
             this.loggerTreeContextMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainToolStrip
             // 
-            this.mainToolStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.mainToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.quitBtn,
             this.toolStripLabel3,
@@ -144,6 +170,7 @@ namespace Log2Console
             this.settingsBtn,
             this.receiversBtn,
             this.toolStripSeparator14,
+            this.quickLoadBtn,
             this.saveBtn,
             this.toolStripSeparator4,
             this.aboutBtn,
@@ -153,8 +180,7 @@ namespace Log2Console
             this.mainToolStrip.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.mainToolStrip.Location = new System.Drawing.Point(0, 0);
             this.mainToolStrip.Name = "mainToolStrip";
-            this.mainToolStrip.Padding = new System.Windows.Forms.Padding(0, 0, 2, 0);
-            this.mainToolStrip.Size = new System.Drawing.Size(1682, 34);
+            this.mainToolStrip.Size = new System.Drawing.Size(1229, 25);
             this.mainToolStrip.TabIndex = 2;
             this.mainToolStrip.Text = "mainToolStrip";
             // 
@@ -165,7 +191,7 @@ namespace Log2Console
             this.quitBtn.Image = global::Log2Console.Properties.Resources.close16;
             this.quitBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.quitBtn.Name = "quitBtn";
-            this.quitBtn.Size = new System.Drawing.Size(73, 31);
+            this.quitBtn.Size = new System.Drawing.Size(49, 22);
             this.quitBtn.Text = "Quit";
             this.quitBtn.Click += new System.EventHandler(this.quitBtn_Click);
             // 
@@ -174,7 +200,7 @@ namespace Log2Console
             this.toolStripLabel3.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
             this.toolStripLabel3.Image = global::Log2Console.Properties.Resources.burn16;
             this.toolStripLabel3.Name = "toolStripLabel3";
-            this.toolStripLabel3.Size = new System.Drawing.Size(24, 31);
+            this.toolStripLabel3.Size = new System.Drawing.Size(16, 22);
             this.toolStripLabel3.ToolTipText = "Log Level Filter";
             // 
             // levelComboBox
@@ -189,14 +215,14 @@ namespace Log2Console
             "Fatal"});
             this.levelComboBox.Margin = new System.Windows.Forms.Padding(1, 1, 1, 0);
             this.levelComboBox.Name = "levelComboBox";
-            this.levelComboBox.Size = new System.Drawing.Size(110, 33);
+            this.levelComboBox.Size = new System.Drawing.Size(75, 24);
             this.levelComboBox.ToolTipText = "Log Level Filter";
             this.levelComboBox.SelectedIndexChanged += new System.EventHandler(this.levelComboBox_SelectedIndexChanged);
             // 
             // toolStripSeparator8
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
             // 
             // pauseBtn
             // 
@@ -204,14 +230,14 @@ namespace Log2Console
             this.pauseBtn.Image = global::Log2Console.Properties.Resources.Pause16;
             this.pauseBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.pauseBtn.Name = "pauseBtn";
-            this.pauseBtn.Size = new System.Drawing.Size(28, 31);
+            this.pauseBtn.Size = new System.Drawing.Size(23, 22);
             this.pauseBtn.ToolTipText = "Enable/Disable All Logs";
             this.pauseBtn.Click += new System.EventHandler(this.pauseBtn_Click);
             // 
             // toolStripSeparator15
             // 
             this.toolStripSeparator15.Name = "toolStripSeparator15";
-            this.toolStripSeparator15.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator15.Size = new System.Drawing.Size(6, 25);
             // 
             // goToFirstLogBtn
             // 
@@ -219,7 +245,7 @@ namespace Log2Console
             this.goToFirstLogBtn.Image = global::Log2Console.Properties.Resources.backward16;
             this.goToFirstLogBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.goToFirstLogBtn.Name = "goToFirstLogBtn";
-            this.goToFirstLogBtn.Size = new System.Drawing.Size(28, 31);
+            this.goToFirstLogBtn.Size = new System.Drawing.Size(23, 22);
             this.goToFirstLogBtn.ToolTipText = "Go to First Log Message";
             this.goToFirstLogBtn.Click += new System.EventHandler(this.goToFirstLogBtn_Click);
             // 
@@ -229,7 +255,7 @@ namespace Log2Console
             this.autoLogToggleBtn.Image = global::Log2Console.Properties.Resources.movefile16;
             this.autoLogToggleBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.autoLogToggleBtn.Name = "autoLogToggleBtn";
-            this.autoLogToggleBtn.Size = new System.Drawing.Size(28, 31);
+            this.autoLogToggleBtn.Size = new System.Drawing.Size(23, 22);
             this.autoLogToggleBtn.ToolTipText = "Toggle Auto Log to Last Log Message";
             this.autoLogToggleBtn.Click += new System.EventHandler(this.autoLogToggleBtn_Click);
             // 
@@ -239,14 +265,14 @@ namespace Log2Console
             this.goToLastLogBtn.Image = global::Log2Console.Properties.Resources.forward16;
             this.goToLastLogBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.goToLastLogBtn.Name = "goToLastLogBtn";
-            this.goToLastLogBtn.Size = new System.Drawing.Size(28, 31);
+            this.goToLastLogBtn.Size = new System.Drawing.Size(23, 22);
             this.goToLastLogBtn.ToolTipText = "Go to Last Log Message";
             this.goToLastLogBtn.Click += new System.EventHandler(this.goToLastLogBtn_Click);
             // 
             // toolStripSeparator13
             // 
             this.toolStripSeparator13.Name = "toolStripSeparator13";
-            this.toolStripSeparator13.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator13.Size = new System.Drawing.Size(6, 25);
             // 
             // zoomOutLogListBtn
             // 
@@ -254,7 +280,7 @@ namespace Log2Console
             this.zoomOutLogListBtn.Image = global::Log2Console.Properties.Resources.zoomout16;
             this.zoomOutLogListBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.zoomOutLogListBtn.Name = "zoomOutLogListBtn";
-            this.zoomOutLogListBtn.Size = new System.Drawing.Size(28, 31);
+            this.zoomOutLogListBtn.Size = new System.Drawing.Size(23, 22);
             this.zoomOutLogListBtn.ToolTipText = "Zoom Out Log List Font";
             this.zoomOutLogListBtn.Click += new System.EventHandler(this.zoomOutLogListBtn_Click);
             // 
@@ -264,21 +290,21 @@ namespace Log2Console
             this.zoomInLogListBtn.Image = global::Log2Console.Properties.Resources.zoomin16;
             this.zoomInLogListBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.zoomInLogListBtn.Name = "zoomInLogListBtn";
-            this.zoomInLogListBtn.Size = new System.Drawing.Size(28, 31);
+            this.zoomInLogListBtn.Size = new System.Drawing.Size(23, 22);
             this.zoomInLogListBtn.ToolTipText = "Zoom In Log List Font";
             this.zoomInLogListBtn.Click += new System.EventHandler(this.zoomInLogListBtn_Click);
             // 
             // toolStripSeparator10
             // 
             this.toolStripSeparator10.Name = "toolStripSeparator10";
-            this.toolStripSeparator10.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator10.Size = new System.Drawing.Size(6, 25);
             // 
             // clearBtn
             // 
             this.clearBtn.Image = global::Log2Console.Properties.Resources.deletefile16;
             this.clearBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.clearBtn.Name = "clearBtn";
-            this.clearBtn.Size = new System.Drawing.Size(79, 31);
+            this.clearBtn.Size = new System.Drawing.Size(54, 22);
             this.clearBtn.Text = "Clear";
             this.clearBtn.ToolTipText = "Clear Log Messages";
             this.clearBtn.Click += new System.EventHandler(this.clearBtn_Click);
@@ -286,14 +312,14 @@ namespace Log2Console
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
             // toolStripLabel4
             // 
             this.toolStripLabel4.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
             this.toolStripLabel4.Image = global::Log2Console.Properties.Resources.find16;
             this.toolStripLabel4.Name = "toolStripLabel4";
-            this.toolStripLabel4.Size = new System.Drawing.Size(24, 31);
+            this.toolStripLabel4.Size = new System.Drawing.Size(16, 22);
             this.toolStripLabel4.Text = "toolStripLabel4";
             this.toolStripLabel4.ToolTipText = "Search Text in Log Messages";
             // 
@@ -301,14 +327,14 @@ namespace Log2Console
             // 
             this.searchTextBox.Margin = new System.Windows.Forms.Padding(1, 1, 1, 0);
             this.searchTextBox.Name = "searchTextBox";
-            this.searchTextBox.Size = new System.Drawing.Size(148, 33);
+            this.searchTextBox.Size = new System.Drawing.Size(100, 24);
             this.searchTextBox.ToolTipText = "Search Text in Log Messages";
-            this.searchTextBox.TextChanged += new System.EventHandler(this.searchTextBox_TextChanged);
+            this.searchTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.searchTextBox_KeyUp);
             // 
             // toolStripSeparator9
             // 
             this.toolStripSeparator9.Name = "toolStripSeparator9";
-            this.toolStripSeparator9.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator9.Size = new System.Drawing.Size(6, 25);
             // 
             // logDetailsPanelToggleBtn
             // 
@@ -317,7 +343,7 @@ namespace Log2Console
             this.logDetailsPanelToggleBtn.Image = global::Log2Console.Properties.Resources.window16;
             this.logDetailsPanelToggleBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.logDetailsPanelToggleBtn.Name = "logDetailsPanelToggleBtn";
-            this.logDetailsPanelToggleBtn.Size = new System.Drawing.Size(93, 31);
+            this.logDetailsPanelToggleBtn.Size = new System.Drawing.Size(62, 22);
             this.logDetailsPanelToggleBtn.Text = "Details";
             this.logDetailsPanelToggleBtn.ToolTipText = "Show/Hide Log Details";
             this.logDetailsPanelToggleBtn.Click += new System.EventHandler(this.logDetailsPanelToggleBtn_Click);
@@ -329,7 +355,7 @@ namespace Log2Console
             this.loggersPanelToggleBtn.Image = global::Log2Console.Properties.Resources.window16;
             this.loggersPanelToggleBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.loggersPanelToggleBtn.Name = "loggersPanelToggleBtn";
-            this.loggersPanelToggleBtn.Size = new System.Drawing.Size(104, 31);
+            this.loggersPanelToggleBtn.Size = new System.Drawing.Size(69, 22);
             this.loggersPanelToggleBtn.Text = "Loggers";
             this.loggersPanelToggleBtn.ToolTipText = "Show/Hide Loggers";
             this.loggersPanelToggleBtn.Click += new System.EventHandler(this.loggersPanelToggleBtn_Click);
@@ -337,14 +363,14 @@ namespace Log2Console
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
             // 
             // settingsBtn
             // 
             this.settingsBtn.Image = global::Log2Console.Properties.Resources.configure16;
             this.settingsBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.settingsBtn.Name = "settingsBtn";
-            this.settingsBtn.Size = new System.Drawing.Size(116, 31);
+            this.settingsBtn.Size = new System.Drawing.Size(78, 22);
             this.settingsBtn.Text = "Settings...";
             this.settingsBtn.Click += new System.EventHandler(this.settingsBtn_Click);
             // 
@@ -353,14 +379,23 @@ namespace Log2Console
             this.receiversBtn.Image = global::Log2Console.Properties.Resources.configure16;
             this.receiversBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.receiversBtn.Name = "receiversBtn";
-            this.receiversBtn.Size = new System.Drawing.Size(125, 31);
+            this.receiversBtn.Size = new System.Drawing.Size(85, 22);
             this.receiversBtn.Text = "Receivers...";
             this.receiversBtn.Click += new System.EventHandler(this.receiversBtn_Click);
             // 
             // toolStripSeparator14
             // 
             this.toolStripSeparator14.Name = "toolStripSeparator14";
-            this.toolStripSeparator14.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator14.Size = new System.Drawing.Size(6, 25);
+            // 
+            // quickLoadBtn
+            // 
+            this.quickLoadBtn.Image = global::Log2Console.Properties.Resources.documentsorcopy16;
+            this.quickLoadBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.quickLoadBtn.Name = "quickLoadBtn";
+            this.quickLoadBtn.Size = new System.Drawing.Size(100, 22);
+            this.quickLoadBtn.Text = "Open Log File";
+            this.quickLoadBtn.Click += new System.EventHandler(this.quickLoadBtn_Click);
             // 
             // saveBtn
             // 
@@ -368,21 +403,21 @@ namespace Log2Console
             this.saveBtn.Image = global::Log2Console.Properties.Resources.saveas16;
             this.saveBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.saveBtn.Name = "saveBtn";
-            this.saveBtn.Size = new System.Drawing.Size(28, 31);
+            this.saveBtn.Size = new System.Drawing.Size(23, 22);
             this.saveBtn.Text = "Export Logs...";
             this.saveBtn.Click += new System.EventHandler(this.saveBtn_Click);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 25);
             // 
             // aboutBtn
             // 
             this.aboutBtn.Image = global::Log2Console.Properties.Resources.infoabout16;
             this.aboutBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.aboutBtn.Name = "aboutBtn";
-            this.aboutBtn.Size = new System.Drawing.Size(90, 31);
+            this.aboutBtn.Size = new System.Drawing.Size(60, 22);
             this.aboutBtn.Text = "About";
             this.aboutBtn.ToolTipText = "About...";
             this.aboutBtn.Click += new System.EventHandler(this.aboutBtn_Click);
@@ -391,7 +426,7 @@ namespace Log2Console
             // 
             this.toolStripSeparator12.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.toolStripSeparator12.Name = "toolStripSeparator12";
-            this.toolStripSeparator12.Size = new System.Drawing.Size(6, 34);
+            this.toolStripSeparator12.Size = new System.Drawing.Size(6, 25);
             // 
             // pinOnTopBtn
             // 
@@ -400,7 +435,7 @@ namespace Log2Console
             this.pinOnTopBtn.Image = global::Log2Console.Properties.Resources.cd16;
             this.pinOnTopBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.pinOnTopBtn.Name = "pinOnTopBtn";
-            this.pinOnTopBtn.Size = new System.Drawing.Size(28, 31);
+            this.pinOnTopBtn.Size = new System.Drawing.Size(23, 22);
             this.pinOnTopBtn.Text = "Pin on Top";
             this.pinOnTopBtn.Click += new System.EventHandler(this.pinOnTopBtn_Click);
             // 
@@ -409,22 +444,21 @@ namespace Log2Console
             this.versionLabel.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.versionLabel.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.Size = new System.Drawing.Size(65, 31);
+            this.versionLabel.Size = new System.Drawing.Size(42, 22);
             this.versionLabel.Text = "Version";
             // 
             // loggerTreeView
             // 
-            this.loggerTreeView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.loggerTreeView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.loggerTreeView.CheckBoxes = true;
             this.loggerTreeView.Indent = 19;
-            this.loggerTreeView.Location = new System.Drawing.Point(0, 38);
-            this.loggerTreeView.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.loggerTreeView.Location = new System.Drawing.Point(0, 25);
             this.loggerTreeView.Name = "loggerTreeView";
             this.loggerTreeView.PathSeparator = ".";
             this.loggerTreeView.ShowRootLines = false;
-            this.loggerTreeView.Size = new System.Drawing.Size(354, 558);
+            this.loggerTreeView.Size = new System.Drawing.Size(237, 532);
             this.loggerTreeView.TabIndex = 1;
             this.loggerTreeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.loggerTreeView_AfterCheck);
             this.loggerTreeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.loggerTreeView_AfterSelect);
@@ -460,10 +494,9 @@ namespace Log2Console
             // 
             this.loggerPanel.Controls.Add(this.loggerInnerPanel);
             this.loggerPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.loggerPanel.Location = new System.Drawing.Point(1326, 34);
-            this.loggerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.loggerPanel.Location = new System.Drawing.Point(992, 25);
             this.loggerPanel.Name = "loggerPanel";
-            this.loggerPanel.Size = new System.Drawing.Size(356, 598);
+            this.loggerPanel.Size = new System.Drawing.Size(237, 557);
             this.loggerPanel.TabIndex = 5;
             // 
             // loggerInnerPanel
@@ -472,23 +505,23 @@ namespace Log2Console
             this.loggerInnerPanel.Controls.Add(this.loggerTreeView);
             this.loggerInnerPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.loggerInnerPanel.Location = new System.Drawing.Point(0, 0);
-            this.loggerInnerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.loggerInnerPanel.Name = "loggerInnerPanel";
-            this.loggerInnerPanel.Size = new System.Drawing.Size(356, 598);
+            this.loggerInnerPanel.Size = new System.Drawing.Size(237, 557);
             this.loggerInnerPanel.TabIndex = 5;
             // 
             // loggersToolStrip
             // 
-            this.loggersToolStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.loggersToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripLabel1,
             this.closeLoggersPanelBtn,
             this.toolStripSeparator2,
-            this.clearLoggersBtn});
+            this.clearLoggersBtn,
+            this.collapseAllBtn,
+            this.dactivateSourcesBtn,
+            this.keepHighlightBtn});
             this.loggersToolStrip.Location = new System.Drawing.Point(0, 0);
             this.loggersToolStrip.Name = "loggersToolStrip";
-            this.loggersToolStrip.Padding = new System.Windows.Forms.Padding(0, 0, 2, 0);
-            this.loggersToolStrip.Size = new System.Drawing.Size(356, 32);
+            this.loggersToolStrip.Size = new System.Drawing.Size(237, 25);
             this.loggersToolStrip.TabIndex = 0;
             this.loggersToolStrip.Text = "Loggers";
             // 
@@ -496,7 +529,7 @@ namespace Log2Console
             // 
             this.toolStripLabel1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(79, 29);
+            this.toolStripLabel1.Size = new System.Drawing.Size(51, 22);
             this.toolStripLabel1.Text = "Loggers";
             // 
             // closeLoggersPanelBtn
@@ -506,32 +539,61 @@ namespace Log2Console
             this.closeLoggersPanelBtn.Image = global::Log2Console.Properties.Resources.close16;
             this.closeLoggersPanelBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.closeLoggersPanelBtn.Name = "closeLoggersPanelBtn";
-            this.closeLoggersPanelBtn.Size = new System.Drawing.Size(28, 29);
+            this.closeLoggersPanelBtn.Size = new System.Drawing.Size(23, 22);
             this.closeLoggersPanelBtn.Text = "Close Loggers View";
             this.closeLoggersPanelBtn.Click += new System.EventHandler(this.closeLoggersPanelBtn_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 32);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
             // 
             // clearLoggersBtn
             // 
             this.clearLoggersBtn.Image = global::Log2Console.Properties.Resources.delete16;
             this.clearLoggersBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.clearLoggersBtn.Name = "clearLoggersBtn";
-            this.clearLoggersBtn.Size = new System.Drawing.Size(104, 29);
+            this.clearLoggersBtn.Size = new System.Drawing.Size(71, 22);
             this.clearLoggersBtn.Text = "Clear All";
             this.clearLoggersBtn.ToolTipText = "Clear All Loggers and Log Messages";
             this.clearLoggersBtn.Click += new System.EventHandler(this.clearLoggersBtn_Click);
             // 
+            // collapseAllBtn
+            // 
+            this.collapseAllBtn.Image = global::Log2Console.Properties.Resources.burn16;
+            this.collapseAllBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.collapseAllBtn.Name = "collapseAllBtn";
+            this.collapseAllBtn.Size = new System.Drawing.Size(72, 20);
+            this.collapseAllBtn.Text = "Collapse";
+            this.collapseAllBtn.ToolTipText = "Collapse all sources";
+            this.collapseAllBtn.Click += new System.EventHandler(this.collapseAllBtn_Click);
+            // 
+            // dactivateSourcesBtn
+            // 
+            this.dactivateSourcesBtn.Image = global::Log2Console.Properties.Resources.burn16;
+            this.dactivateSourcesBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.dactivateSourcesBtn.Name = "dactivateSourcesBtn";
+            this.dactivateSourcesBtn.Size = new System.Drawing.Size(82, 20);
+            this.dactivateSourcesBtn.Text = "Deactivate";
+            this.dactivateSourcesBtn.ToolTipText = "Deactivate selected sources";
+            this.dactivateSourcesBtn.Click += new System.EventHandler(this.deactivatedsourcesBtn_Click);
+            // 
+            // keepHighlightBtn
+            // 
+            this.keepHighlightBtn.Image = global::Log2Console.Properties.Resources.burn16;
+            this.keepHighlightBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.keepHighlightBtn.Name = "keepHighlightBtn";
+            this.keepHighlightBtn.Size = new System.Drawing.Size(99, 20);
+            this.keepHighlightBtn.Text = "Keep selected";
+            this.keepHighlightBtn.ToolTipText = "Deactivate all unhiglight sources";
+            this.keepHighlightBtn.Click += new System.EventHandler(this.deactivatedUnselectSourcesBtn_Click);
+            // 
             // loggerSplitter
             // 
             this.loggerSplitter.Dock = System.Windows.Forms.DockStyle.Right;
-            this.loggerSplitter.Location = new System.Drawing.Point(1322, 34);
-            this.loggerSplitter.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.loggerSplitter.Location = new System.Drawing.Point(989, 25);
             this.loggerSplitter.Name = "loggerSplitter";
-            this.loggerSplitter.Size = new System.Drawing.Size(4, 598);
+            this.loggerSplitter.Size = new System.Drawing.Size(3, 557);
             this.loggerSplitter.TabIndex = 6;
             this.loggerSplitter.TabStop = false;
             // 
@@ -546,7 +608,6 @@ namespace Log2Console
             // 
             // trayContextMenuStrip
             // 
-            this.trayContextMenuStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.trayContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.restoreTrayMenuItem,
             this.toolStripSeparator5,
@@ -555,83 +616,103 @@ namespace Log2Console
             this.toolStripSeparator6,
             this.exitTrayMenuItem});
             this.trayContextMenuStrip.Name = "trayContextMenuStrip";
-            this.trayContextMenuStrip.Size = new System.Drawing.Size(269, 136);
+            this.trayContextMenuStrip.Size = new System.Drawing.Size(189, 104);
             // 
             // restoreTrayMenuItem
             // 
             this.restoreTrayMenuItem.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.restoreTrayMenuItem.Name = "restoreTrayMenuItem";
-            this.restoreTrayMenuItem.Size = new System.Drawing.Size(268, 30);
+            this.restoreTrayMenuItem.Size = new System.Drawing.Size(188, 22);
             this.restoreTrayMenuItem.Text = "Restore";
             this.restoreTrayMenuItem.Click += new System.EventHandler(this.restoreTrayMenuItem_Click);
             // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(265, 6);
+            this.toolStripSeparator5.Size = new System.Drawing.Size(185, 6);
             // 
             // settingsTrayMenuItem
             // 
             this.settingsTrayMenuItem.Name = "settingsTrayMenuItem";
-            this.settingsTrayMenuItem.Size = new System.Drawing.Size(268, 30);
+            this.settingsTrayMenuItem.Size = new System.Drawing.Size(188, 22);
             this.settingsTrayMenuItem.Text = "Settings...";
             this.settingsTrayMenuItem.Click += new System.EventHandler(this.settingsTrayMenuItem_Click);
             // 
             // aboutTrayMenuItem
             // 
             this.aboutTrayMenuItem.Name = "aboutTrayMenuItem";
-            this.aboutTrayMenuItem.Size = new System.Drawing.Size(268, 30);
+            this.aboutTrayMenuItem.Size = new System.Drawing.Size(188, 22);
             this.aboutTrayMenuItem.Text = "About Log2Console...";
             this.aboutTrayMenuItem.Click += new System.EventHandler(this.aboutTrayMenuItem_Click);
             // 
             // toolStripSeparator6
             // 
             this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(265, 6);
+            this.toolStripSeparator6.Size = new System.Drawing.Size(185, 6);
             // 
             // exitTrayMenuItem
             // 
             this.exitTrayMenuItem.Name = "exitTrayMenuItem";
-            this.exitTrayMenuItem.Size = new System.Drawing.Size(268, 30);
+            this.exitTrayMenuItem.Size = new System.Drawing.Size(188, 22);
             this.exitTrayMenuItem.Text = "Exit";
             this.exitTrayMenuItem.Click += new System.EventHandler(this.exitTrayMenuItem_Click);
             // 
             // logDetailPanel
             // 
-            this.logDetailPanel.Controls.Add(this.logDetailInnerPanel);
-            this.logDetailPanel.Controls.Add(this.logDetailToolStrip);
+            this.logDetailPanel.Controls.Add(this.tabControlDetail);
             this.logDetailPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.logDetailPanel.Location = new System.Drawing.Point(0, 528);
-            this.logDetailPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.logDetailPanel.Location = new System.Drawing.Point(0, 388);
             this.logDetailPanel.Name = "logDetailPanel";
-            this.logDetailPanel.Size = new System.Drawing.Size(1322, 104);
+            this.logDetailPanel.Size = new System.Drawing.Size(989, 194);
             this.logDetailPanel.TabIndex = 7;
+            // 
+            // tabControlDetail
+            // 
+            this.tabControlDetail.Controls.Add(this.tabMessage);
+            this.tabControlDetail.Controls.Add(this.tabExceptions);
+            this.tabControlDetail.Controls.Add(this.tabSource);
+            this.tabControlDetail.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControlDetail.Location = new System.Drawing.Point(0, 0);
+            this.tabControlDetail.Name = "tabControlDetail";
+            this.tabControlDetail.SelectedIndex = 0;
+            this.tabControlDetail.Size = new System.Drawing.Size(989, 194);
+            this.tabControlDetail.TabIndex = 2;
+            // 
+            // tabMessage
+            // 
+            this.tabMessage.Controls.Add(this.logDetailInnerPanel);
+            this.tabMessage.Location = new System.Drawing.Point(4, 22);
+            this.tabMessage.Name = "tabMessage";
+            this.tabMessage.Padding = new System.Windows.Forms.Padding(3);
+            this.tabMessage.Size = new System.Drawing.Size(981, 168);
+            this.tabMessage.TabIndex = 0;
+            this.tabMessage.Text = "Message Details";
+            this.tabMessage.UseVisualStyleBackColor = true;
             // 
             // logDetailInnerPanel
             // 
             this.logDetailInnerPanel.Controls.Add(this.logDetailTextBox);
+            this.logDetailInnerPanel.Controls.Add(this.logDetailToolStrip);
             this.logDetailInnerPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logDetailInnerPanel.Location = new System.Drawing.Point(0, 32);
-            this.logDetailInnerPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.logDetailInnerPanel.Location = new System.Drawing.Point(3, 3);
             this.logDetailInnerPanel.Name = "logDetailInnerPanel";
-            this.logDetailInnerPanel.Size = new System.Drawing.Size(1322, 72);
+            this.logDetailInnerPanel.Size = new System.Drawing.Size(975, 162);
             this.logDetailInnerPanel.TabIndex = 1;
             // 
             // logDetailTextBox
             // 
+            this.logDetailTextBox.BackColor = System.Drawing.SystemColors.Window;
             this.logDetailTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logDetailTextBox.Location = new System.Drawing.Point(0, 0);
-            this.logDetailTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.logDetailTextBox.Multiline = true;
+            this.logDetailTextBox.Location = new System.Drawing.Point(0, 25);
             this.logDetailTextBox.Name = "logDetailTextBox";
-            this.logDetailTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logDetailTextBox.Size = new System.Drawing.Size(1322, 72);
+            this.logDetailTextBox.ReadOnly = true;
+            this.logDetailTextBox.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
+            this.logDetailTextBox.Size = new System.Drawing.Size(975, 137);
             this.logDetailTextBox.TabIndex = 0;
-            this.logDetailTextBox.TextChanged += new System.EventHandler(this.logDetailTextBox_TextChanged);
+            this.logDetailTextBox.Text = "";
             // 
             // logDetailToolStrip
             // 
-            this.logDetailToolStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.logDetailToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripLabel2,
             this.closeLogDetailPanelBtn,
@@ -642,16 +723,15 @@ namespace Log2Console
             this.copyLogDetailBtn});
             this.logDetailToolStrip.Location = new System.Drawing.Point(0, 0);
             this.logDetailToolStrip.Name = "logDetailToolStrip";
-            this.logDetailToolStrip.Padding = new System.Windows.Forms.Padding(0, 0, 2, 0);
-            this.logDetailToolStrip.Size = new System.Drawing.Size(1322, 32);
-            this.logDetailToolStrip.TabIndex = 0;
-            this.logDetailToolStrip.Text = "Log Message Details";
+            this.logDetailToolStrip.Size = new System.Drawing.Size(975, 25);
+            this.logDetailToolStrip.TabIndex = 1;
+            this.logDetailToolStrip.Text = "toolStrip2";
             // 
             // toolStripLabel2
             // 
             this.toolStripLabel2.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(149, 29);
+            this.toolStripLabel2.Size = new System.Drawing.Size(96, 22);
             this.toolStripLabel2.Text = "Message Details";
             // 
             // closeLogDetailPanelBtn
@@ -661,14 +741,14 @@ namespace Log2Console
             this.closeLogDetailPanelBtn.Image = global::Log2Console.Properties.Resources.close16;
             this.closeLogDetailPanelBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.closeLogDetailPanelBtn.Name = "closeLogDetailPanelBtn";
-            this.closeLogDetailPanelBtn.Size = new System.Drawing.Size(28, 29);
+            this.closeLogDetailPanelBtn.Size = new System.Drawing.Size(23, 22);
             this.closeLogDetailPanelBtn.Text = "Close Log Detail Panel";
             this.closeLogDetailPanelBtn.Click += new System.EventHandler(this.closeLogDetailPanelBtn_Click);
             // 
             // toolStripSeparator11
             // 
             this.toolStripSeparator11.Name = "toolStripSeparator11";
-            this.toolStripSeparator11.Size = new System.Drawing.Size(6, 32);
+            this.toolStripSeparator11.Size = new System.Drawing.Size(6, 25);
             // 
             // zoomOutLogDetailsBtn
             // 
@@ -676,7 +756,7 @@ namespace Log2Console
             this.zoomOutLogDetailsBtn.Image = global::Log2Console.Properties.Resources.zoomout16;
             this.zoomOutLogDetailsBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.zoomOutLogDetailsBtn.Name = "zoomOutLogDetailsBtn";
-            this.zoomOutLogDetailsBtn.Size = new System.Drawing.Size(28, 29);
+            this.zoomOutLogDetailsBtn.Size = new System.Drawing.Size(23, 22);
             this.zoomOutLogDetailsBtn.ToolTipText = "Zoom Out Log Details Font";
             this.zoomOutLogDetailsBtn.Click += new System.EventHandler(this.zoomOutLogDetailsBtn_Click);
             // 
@@ -686,86 +766,184 @@ namespace Log2Console
             this.zoomInLogDetailsBtn.Image = global::Log2Console.Properties.Resources.zoomin16;
             this.zoomInLogDetailsBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.zoomInLogDetailsBtn.Name = "zoomInLogDetailsBtn";
-            this.zoomInLogDetailsBtn.Size = new System.Drawing.Size(28, 29);
+            this.zoomInLogDetailsBtn.Size = new System.Drawing.Size(23, 22);
             this.zoomInLogDetailsBtn.ToolTipText = "Zoom In Log Details Font";
             this.zoomInLogDetailsBtn.Click += new System.EventHandler(this.zoomInLogDetailsBtn_Click);
             // 
             // toolStripSeparator7
             // 
             this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 32);
+            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
             // 
             // copyLogDetailBtn
             // 
             this.copyLogDetailBtn.Image = global::Log2Console.Properties.Resources.documentsorcopy16;
             this.copyLogDetailBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.copyLogDetailBtn.Name = "copyLogDetailBtn";
-            this.copyLogDetailBtn.Size = new System.Drawing.Size(82, 29);
+            this.copyLogDetailBtn.Size = new System.Drawing.Size(55, 22);
             this.copyLogDetailBtn.Text = "Copy";
             this.copyLogDetailBtn.Click += new System.EventHandler(this.copyLogDetailBtn_Click);
+            // 
+            // tabExceptions
+            // 
+            this.tabExceptions.Controls.Add(this.tbExceptions);
+            this.tabExceptions.Location = new System.Drawing.Point(4, 22);
+            this.tabExceptions.Name = "tabExceptions";
+            this.tabExceptions.Padding = new System.Windows.Forms.Padding(3);
+            this.tabExceptions.Size = new System.Drawing.Size(981, 168);
+            this.tabExceptions.TabIndex = 2;
+            this.tabExceptions.Text = "Exceptions";
+            this.tabExceptions.UseVisualStyleBackColor = true;
+            // 
+            // tbExceptions
+            // 
+            this.tbExceptions.BackColor = System.Drawing.SystemColors.Window;
+            this.tbExceptions.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tbExceptions.Location = new System.Drawing.Point(3, 3);
+            this.tbExceptions.Name = "tbExceptions";
+            this.tbExceptions.ReadOnly = true;
+            this.tbExceptions.Size = new System.Drawing.Size(975, 162);
+            this.tbExceptions.TabIndex = 0;
+            this.tbExceptions.Text = "";
+            this.tbExceptions.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.TbExceptionsLinkClicked);
+            // 
+            // tabSource
+            // 
+            this.tabSource.Controls.Add(this.panel1);
+            this.tabSource.Location = new System.Drawing.Point(4, 22);
+            this.tabSource.Name = "tabSource";
+            this.tabSource.Padding = new System.Windows.Forms.Padding(3);
+            this.tabSource.Size = new System.Drawing.Size(981, 168);
+            this.tabSource.TabIndex = 1;
+            this.tabSource.Text = "Source Code";
+            this.tabSource.UseVisualStyleBackColor = true;
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.textEditorSourceCode);
+            this.panel1.Controls.Add(this.toolStrip1);
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel1.Location = new System.Drawing.Point(3, 3);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(975, 162);
+            this.panel1.TabIndex = 1;
+            // 
+            // textEditorSourceCode
+            // 
+            this.textEditorSourceCode.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textEditorSourceCode.IsReadOnly = false;
+            this.textEditorSourceCode.LineViewerStyle = ICSharpCode.TextEditor.Document.LineViewerStyle.FullRow;
+            this.textEditorSourceCode.Location = new System.Drawing.Point(0, 25);
+            this.textEditorSourceCode.Name = "textEditorSourceCode";
+            this.textEditorSourceCode.Size = new System.Drawing.Size(975, 137);
+            this.textEditorSourceCode.TabIndex = 0;
+            // 
+            // toolStrip1
+            // 
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripLabel5,
+            this.lbFileName,
+            this.btnOpenFileInVS});
+            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Size = new System.Drawing.Size(975, 25);
+            this.toolStrip1.TabIndex = 2;
+            this.toolStrip1.Text = "toolStrip1";
+            // 
+            // toolStripLabel5
+            // 
+            this.toolStripLabel5.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.toolStripLabel5.Name = "toolStripLabel5";
+            this.toolStripLabel5.Size = new System.Drawing.Size(29, 22);
+            this.toolStripLabel5.Text = "File:";
+            // 
+            // lbFileName
+            // 
+            this.lbFileName.Name = "lbFileName";
+            this.lbFileName.Size = new System.Drawing.Size(0, 22);
+            // 
+            // btnOpenFileInVS
+            // 
+            this.btnOpenFileInVS.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnOpenFileInVS.Image = global::Log2Console.Properties.Resources.saveas16;
+            this.btnOpenFileInVS.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnOpenFileInVS.Name = "btnOpenFileInVS";
+            this.btnOpenFileInVS.Size = new System.Drawing.Size(23, 22);
+            this.btnOpenFileInVS.Text = "Export Logs...";
+            this.btnOpenFileInVS.Click += new System.EventHandler(this.btnOpenFileInVS_Click);
             // 
             // logDetailSplitter
             // 
             this.logDetailSplitter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.logDetailSplitter.Location = new System.Drawing.Point(0, 524);
-            this.logDetailSplitter.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.logDetailSplitter.Location = new System.Drawing.Point(0, 385);
             this.logDetailSplitter.Name = "logDetailSplitter";
-            this.logDetailSplitter.Size = new System.Drawing.Size(1322, 4);
+            this.logDetailSplitter.Size = new System.Drawing.Size(989, 3);
             this.logDetailSplitter.TabIndex = 8;
             this.logDetailSplitter.TabStop = false;
             // 
             // loggerTreeContextMenuStrip
             // 
-            this.loggerTreeContextMenuStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.loggerTreeContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.deleteLoggerTreeMenuItem,
             this.toolStripSeparator16,
             this.deleteAllLoggerTreeMenuItem});
             this.loggerTreeContextMenuStrip.Name = "loggerTreeContextMenuStrip";
-            this.loggerTreeContextMenuStrip.Size = new System.Drawing.Size(231, 70);
+            this.loggerTreeContextMenuStrip.Size = new System.Drawing.Size(164, 54);
             // 
             // deleteLoggerTreeMenuItem
             // 
             this.deleteLoggerTreeMenuItem.Name = "deleteLoggerTreeMenuItem";
-            this.deleteLoggerTreeMenuItem.Size = new System.Drawing.Size(230, 30);
+            this.deleteLoggerTreeMenuItem.Size = new System.Drawing.Size(163, 22);
             this.deleteLoggerTreeMenuItem.Text = "Clear Logger";
             this.deleteLoggerTreeMenuItem.Click += new System.EventHandler(this.deleteLoggerTreeMenuItem_Click);
             // 
             // toolStripSeparator16
             // 
             this.toolStripSeparator16.Name = "toolStripSeparator16";
-            this.toolStripSeparator16.Size = new System.Drawing.Size(227, 6);
+            this.toolStripSeparator16.Size = new System.Drawing.Size(160, 6);
             // 
             // deleteAllLoggerTreeMenuItem
             // 
             this.deleteAllLoggerTreeMenuItem.Name = "deleteAllLoggerTreeMenuItem";
-            this.deleteAllLoggerTreeMenuItem.Size = new System.Drawing.Size(230, 30);
+            this.deleteAllLoggerTreeMenuItem.Size = new System.Drawing.Size(163, 22);
             this.deleteAllLoggerTreeMenuItem.Text = "Clear All Loggers";
             this.deleteAllLoggerTreeMenuItem.Click += new System.EventHandler(this.deleteAllLoggerTreeMenuItem_Click);
+            // 
+            // openFileDialog1
+            // 
+            this.openFileDialog1.DefaultExt = "*.csv";
+            this.openFileDialog1.Filter = "CSV file|*.csv|All files|*.*";
+            this.openFileDialog1.Title = "Open Log File";
             // 
             // logListView
             // 
             this.logListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader6,
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3,
             this.columnHeader4,
+            this.columnHeader7,
+            this.columnHeader8,
             this.columnHeader5});
             this.logListView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.logListView.FullRowSelect = true;
             this.logListView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.logListView.HideSelection = false;
-            this.logListView.Location = new System.Drawing.Point(0, 34);
-            this.logListView.Margin = new System.Windows.Forms.Padding(4);
-            this.logListView.MultiSelect = false;
+            this.logListView.Location = new System.Drawing.Point(0, 25);
             this.logListView.Name = "logListView";
             this.logListView.ShowItemToolTips = true;
-            this.logListView.Size = new System.Drawing.Size(1322, 490);
+            this.logListView.Size = new System.Drawing.Size(989, 360);
             this.logListView.TabIndex = 0;
             this.logListView.UseCompatibleStateImageBehavior = false;
             this.logListView.View = System.Windows.Forms.View.Details;
-            this.logListView.Scroll += new System.EventHandler(this.logListView_Scroll);
             this.logListView.SelectedIndexChanged += new System.EventHandler(this.logListView_SelectedIndexChanged);
+            this.logListView.KeyDown += new System.Windows.Forms.KeyEventHandler(this.logListView_KeyDown);
+            // 
+            // columnHeader6
+            // 
+            this.columnHeader6.Text = "Nr";
+            this.columnHeader6.Width = 40;
             // 
             // columnHeader1
             // 
@@ -787,6 +965,16 @@ namespace Log2Console
             this.columnHeader4.Text = "Thread";
             this.columnHeader4.Width = 52;
             // 
+            // columnHeader7
+            // 
+            this.columnHeader7.Text = "CallSiteClass";
+            this.columnHeader7.Width = 100;
+            // 
+            // columnHeader8
+            // 
+            this.columnHeader8.Text = "CallSiteMethod";
+            this.columnHeader8.Width = 100;
+            // 
             // columnHeader5
             // 
             this.columnHeader5.Text = "Message";
@@ -794,9 +982,9 @@ namespace Log2Console
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(144F, 144F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(1682, 632);
+            this.ClientSize = new System.Drawing.Size(1229, 582);
             this.Controls.Add(this.logListView);
             this.Controls.Add(this.logDetailSplitter);
             this.Controls.Add(this.logDetailPanel);
@@ -805,7 +993,6 @@ namespace Log2Console
             this.Controls.Add(this.mainToolStrip);
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "MainForm";
             this.Text = "Log2Console";
             this.mainToolStrip.ResumeLayout(false);
@@ -817,11 +1004,18 @@ namespace Log2Console
             this.loggersToolStrip.PerformLayout();
             this.trayContextMenuStrip.ResumeLayout(false);
             this.logDetailPanel.ResumeLayout(false);
-            this.logDetailPanel.PerformLayout();
+            this.tabControlDetail.ResumeLayout(false);
+            this.tabMessage.ResumeLayout(false);
             this.logDetailInnerPanel.ResumeLayout(false);
             this.logDetailInnerPanel.PerformLayout();
             this.logDetailToolStrip.ResumeLayout(false);
             this.logDetailToolStrip.PerformLayout();
+            this.tabExceptions.ResumeLayout(false);
+            this.tabSource.ResumeLayout(false);
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
+            this.toolStrip1.ResumeLayout(false);
+            this.toolStrip1.PerformLayout();
             this.loggerTreeContextMenuStrip.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -855,7 +1049,7 @@ namespace Log2Console
         private System.Windows.Forms.ToolStripButton loggersPanelToggleBtn;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripButton clearLoggersBtn;
-		private System.Windows.Forms.NotifyIcon appNotifyIcon;
+        private System.Windows.Forms.NotifyIcon appNotifyIcon;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripButton aboutBtn;
         private System.Windows.Forms.ToolStripButton settingsBtn;
@@ -870,8 +1064,7 @@ namespace Log2Console
         private System.Windows.Forms.Panel logDetailPanel;
         private System.Windows.Forms.Splitter logDetailSplitter;
         private System.Windows.Forms.Panel logDetailInnerPanel;
-        private System.Windows.Forms.TextBox logDetailTextBox;
-        private System.Windows.Forms.ToolStrip logDetailToolStrip;
+        private System.Windows.Forms.RichTextBox logDetailTextBox;
         private System.Windows.Forms.ToolStripLabel toolStripLabel2;
         private System.Windows.Forms.ToolStripButton closeLogDetailPanelBtn;
         private System.Windows.Forms.ToolStripButton logDetailsPanelToggleBtn;
@@ -905,6 +1098,26 @@ namespace Log2Console
         private System.Windows.Forms.ToolStripMenuItem deleteLoggerTreeMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator16;
         private System.Windows.Forms.ToolStripMenuItem deleteAllLoggerTreeMenuItem;
+        private System.Windows.Forms.TabControl tabControlDetail;
+        private System.Windows.Forms.TabPage tabMessage;
+        private System.Windows.Forms.TabPage tabSource;
+        private ICSharpCode.TextEditor.TextEditorControl textEditorSourceCode;
+        private System.Windows.Forms.ColumnHeader columnHeader6;
+        private System.Windows.Forms.ColumnHeader columnHeader7;
+        private System.Windows.Forms.ColumnHeader columnHeader8;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel5;
+        private ToolStripLabel lbFileName;
+        private ToolStrip logDetailToolStrip;
+        private ToolStripButton btnOpenFileInVS;
+        private TabPage tabExceptions;
+        private RichTextBoxLinks.RichTextBoxEx tbExceptions;
+        private ToolStripButton quickLoadBtn;
+        private OpenFileDialog openFileDialog1;
+        private ToolStripButton dactivateSourcesBtn;
+        private ToolStripButton collapseAllBtn;
+        private ToolStripButton keepHighlightBtn;
     }
 }
 

@@ -7,28 +7,23 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
 {
     public sealed class TaskbarManager
     {
-        private static readonly object Lock = new object();
-        private static volatile TaskbarManager _instance;
-        private IntPtr _ownerHandle;
-        // Internal implemenation of ITaskbarList4 interface
-        private ITaskbarList4 _taskbarList;
-        private ThumbnailToolbarManager _thumbnailToolbarManager;
+        static readonly object Lock = new object();
+        static volatile TaskbarManager _instance;
 
-        private TaskbarManager()
-        {
-        }
+        TaskbarManager() { }
 
         /// <summary>
-        ///     Indicates whether this feature is supported on the current platform.
+        /// Indicates whether this feature is supported on the current platform.
         /// </summary>
         public static bool IsPlatformSupported
         {
             get { return CoreHelpers.RunningOnWin7; }
         }
 
+        ThumbnailToolbarManager _thumbnailToolbarManager;
         /// <summary>
-        ///     Gets the Thumbnail toolbar manager class for adding/updating
-        ///     toolbar buttons.
+        /// Gets the Thumbnail toolbar manager class for adding/updating
+        /// toolbar buttons.
         /// </summary>
         public ThumbnailToolbarManager ThumbnailToolbars
         {
@@ -41,7 +36,7 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
         }
 
         /// <summary>
-        ///     Represents an instance of the Windows Taskbar
+        /// Represents an instance of the Windows Taskbar
         /// </summary>
         public static TaskbarManager Instance
         {
@@ -61,8 +56,8 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
         }
 
         /// <summary>
-        ///     Gets or sets the application user model id. Use this to explicitly
-        ///     set the application id when generating custom jump lists
+        /// Gets or sets the application user model id. Use this to explicitly
+        /// set the application id when generating custom jump lists
         /// </summary>
         public string ApplicationId
         {
@@ -83,23 +78,24 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             }
         }
 
-        private static void SetCurrentProcessAppId(string value)
+        static void SetCurrentProcessAppId(string value)
         {
             TaskbarNativeMethods.SetCurrentProcessExplicitAppUserModelID(value);
         }
 
-        private static string GetCurrentProcessAppId()
+        static string GetCurrentProcessAppId()
         {
             string appId;
             TaskbarNativeMethods.GetCurrentProcessExplicitAppUserModelID(out appId);
             return appId;
         }
 
+        IntPtr _ownerHandle;
         /// <summary>
-        ///     Sets the handle of the window whose taskbar button will be used
-        ///     to display progress.
+        /// Sets the handle of the window whose taskbar button will be used
+        /// to display progress.
         /// </summary>
-        private IntPtr OwnerHandle
+        IntPtr OwnerHandle
         {
             get
             {
@@ -115,6 +111,8 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             }
         }
 
+        // Internal implemenation of ITaskbarList4 interface
+        ITaskbarList4 _taskbarList;
         internal ITaskbarList4 TaskbarList
         {
             get
@@ -124,7 +122,7 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
                     {
                         if (_taskbarList == null)
                         {
-                            _taskbarList = (ITaskbarList4) new CTaskbarList();
+                            _taskbarList = (ITaskbarList4)new CTaskbarList();
                             _taskbarList.HrInit();
                         }
                     }
@@ -133,12 +131,13 @@ namespace Microsoft.WindowsAPICodePack.Taskbar
             }
         }
 
+
         public void SetProgressState(TaskbarProgressBarState state)
         {
             CoreHelpers.ThrowIfNotWin7();
 
             if (OwnerHandle != IntPtr.Zero)
-                TaskbarList.SetProgressState(OwnerHandle, (TBPFLAG) state);
+                TaskbarList.SetProgressState(OwnerHandle, (TBPFLAG)state);
         }
 
         public void SetOverlayIcon(Icon icon, string accessibilityText)

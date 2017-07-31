@@ -21,6 +21,7 @@ namespace Log2Console.Receiver
         {
             Log4jXml,
             Flat,
+            CSV
         }
 
 

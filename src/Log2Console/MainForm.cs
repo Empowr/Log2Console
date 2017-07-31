@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -17,7 +18,7 @@ using Log2Console.UI;
 using Timer = System.Threading.Timer;
 
 // Configure log4net using the .config file
-[assembly: log4net.Config.XmlConfigurator(Watch = true)]
+//[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
 
 namespace Log2Console
@@ -41,9 +42,9 @@ namespace Log2Console
     private Timer _taskbarProgressTimer;
     private const int _taskbarProgressTimerPeriod = 2000;
     private bool _addedLogMessage;
-    private readonly ThumbnailToolbarButton _pauseWinbarBtn;
-    private readonly ThumbnailToolbarButton _autoScrollWinbarBtn;
-    private readonly ThumbnailToolbarButton _clearAllWinbarBtn;
+    private readonly ThumbnailToolBarButton _pauseWinbarBtn;
+    private readonly ThumbnailToolBarButton _autoScrollWinbarBtn;
+    private readonly ThumbnailToolBarButton _clearAllWinbarBtn;
 
     private readonly Queue<LogMessage> _eventQueue;
     private Timer _logMsgTimer;
@@ -101,7 +102,7 @@ namespace Log2Console
                                                  UserSettings.Instance.Layout.WindowState);
 
       // Windows 7 CodePack (Taskbar icons and progress)
-      _isWin7orLater = TaskbarManager.IsPlatformSupported;
+        _isWin7orLater = false; //TaskbarManager.IsPlatformSupported;
 
       if (_isWin7orLater)
       {
@@ -112,21 +113,21 @@ namespace Log2Console
           _taskbarProgressTimer = new Timer(OnTaskbarProgressTimer, null, _taskbarProgressTimerPeriod, _taskbarProgressTimerPeriod);
 
           // Pause Btn
-          _pauseWinbarBtn = new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap)pauseBtn.Image).GetHicon()), pauseBtn.ToolTipText);
+          _pauseWinbarBtn = new ThumbnailToolBarButton(Icon.FromHandle(((Bitmap)pauseBtn.Image).GetHicon()), pauseBtn.ToolTipText);
           _pauseWinbarBtn.Click += pauseBtn_Click;
 
           // Auto Scroll Btn
           _autoScrollWinbarBtn =
-              new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap)autoLogToggleBtn.Image).GetHicon()), autoLogToggleBtn.ToolTipText);
+              new ThumbnailToolBarButton(Icon.FromHandle(((Bitmap)autoLogToggleBtn.Image).GetHicon()), autoLogToggleBtn.ToolTipText);
           _autoScrollWinbarBtn.Click += autoLogToggleBtn_Click;
 
           // Clear All Btn
           _clearAllWinbarBtn =
-              new ThumbnailToolbarButton(Icon.FromHandle(((Bitmap)clearLoggersBtn.Image).GetHicon()), clearLoggersBtn.ToolTipText);
+              new ThumbnailToolBarButton(Icon.FromHandle(((Bitmap)clearLoggersBtn.Image).GetHicon()), clearLoggersBtn.ToolTipText);
           _clearAllWinbarBtn.Click += clearAll_Click;
 
           // Add Btns
-          TaskbarManager.Instance.ThumbnailToolbars.AddButtons(Handle, _pauseWinbarBtn, _autoScrollWinbarBtn, _clearAllWinbarBtn);
+          TaskbarManager.Instance.ThumbnailToolBars.AddButtons(Handle, _pauseWinbarBtn, _autoScrollWinbarBtn, _clearAllWinbarBtn);
         }
         catch (Exception)
         {
@@ -213,7 +214,8 @@ namespace Log2Console
           _taskbarProgressTimer = null;
         }
 
-        if (UserSettings.Instance.Layout.LogListViewColumnsWidths == null)
+        if ((UserSettings.Instance.Layout.LogListViewColumnsWidths == null) ||
+            (UserSettings.Instance.Layout.LogListViewColumnsWidths.Length != logListView.Columns.Count))
         {
           UserSettings.Instance.Layout.LogListViewColumnsWidths = new int[logListView.Columns.Count];
         }
@@ -299,6 +301,30 @@ namespace Log2Console
         }
       }
 
+	    //See if the Columns Changed
+	    bool columnsChanged = false;
+	
+	    if (logListView.Columns.Count != UserSettings.Instance.ColumnConfiguration.Length)
+	        columnsChanged = true;
+	    else
+	        for (int i = 0; i < UserSettings.Instance.ColumnConfiguration.Length; i++)
+	        {
+	            if (!UserSettings.Instance.ColumnConfiguration[i].Name.Equals(logListView.Columns[i].Text))
+	            {
+	                columnsChanged = true;
+	                break;
+	            }
+	        }
+	
+	    if (columnsChanged)
+	    {
+	        logListView.Columns.Clear();
+	        foreach (var column in UserSettings.Instance.ColumnConfiguration)
+	        {
+	            logListView.Columns.Add(column.Name);
+	        }
+	    }
+
       // Layout
       if (noCheck)
       {
@@ -315,7 +341,8 @@ namespace Log2Console
         {
           for (int i = 0; i < UserSettings.Instance.Layout.LogListViewColumnsWidths.Length; i++)
           {
-            logListView.Columns[i].Width = UserSettings.Instance.Layout.LogListViewColumnsWidths[i];
+            if (i < logListView.Columns.Count)
+            	logListView.Columns[i].Width = UserSettings.Instance.Layout.LogListViewColumnsWidths[i];
           }
         }
       }
@@ -525,17 +552,23 @@ namespace Log2Console
     /// </summary>
     private void AddLogMessage(LogMessage logMsg)
     {
-      if (_pauseLog)
-        return;
-
-      RemovedLogMsgsHighlight();
-
-      _addedLogMessage = true;
-
-      LogManager.Instance.ProcessLogMessage(logMsg);
-
-      if (!Visible && UserSettings.Instance.NotifyNewLogWhenHidden)
-        ShowBalloonTip("A new message has been received...");
+	    try
+	    {
+	      if (_pauseLog)
+	        return;
+	
+	      RemovedLogMsgsHighlight();
+	
+	      _addedLogMessage = true;
+	
+	      LogManager.Instance.ProcessLogMessage(logMsg);
+	
+	      if (!Visible && UserSettings.Instance.NotifyNewLogWhenHidden)
+	        ShowBalloonTip("A new message has been received...");
+	    }
+        catch (Exception)
+        {
+        }
     }
 
 
@@ -617,11 +650,23 @@ namespace Log2Console
 
       if (logMsgItem == null)
       {
+        logDetailTextBox.Text = string.Empty;
         _msgDetailText = String.Empty;
+        PopulateExceptions(null);
+        OpenSourceFile(null, 0);
       }
       else
       {
         StringBuilder sb = new StringBuilder();
+
+        sb.Append("CallSiteClass: ");
+        sb.AppendLine(logMsgItem.Message.CallSiteClass);
+        sb.Append("CallSiteMethod: ");
+        sb.AppendLine(logMsgItem.Message.CallSiteMethod);
+        sb.Append("File: ");
+        sb.AppendLine(logMsgItem.Message.SourceFileName);
+        sb.Append("Line: ");
+        sb.AppendLine(logMsgItem.Message.SourceFileLineNr.ToString());
 
         if (UserSettings.Instance.ShowMsgDetailsProperties)
         {
@@ -634,17 +679,146 @@ namespace Log2Console
         sb.AppendLine(logMsgItem.Message.Message.Replace("\n", "\r\n"));
 
         // Append exception
-        if (UserSettings.Instance.ShowMsgDetailsException && !String.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
+        tbExceptions.Text = string.Empty;
+        if (UserSettings.Instance.ShowMsgDetailsException &&
+            !String.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
         {
-          sb.AppendLine(logMsgItem.Message.ExceptionString);
+            //sb.AppendLine(logMsgItem.Message.ExceptionString);            
+            if (!string.IsNullOrEmpty(logMsgItem.Message.ExceptionString))
+            {
+                PopulateExceptions(logMsgItem.Message.ExceptionString);
+            }
         }
 
         _msgDetailText = sb.ToString();
 
         logDetailTextBox.ForeColor = logMsgItem.Message.Level.Color;
-      }
+        logDetailTextBox.Text = _msgDetailText;
 
-      logDetailTextBox.Text = _msgDetailText;
+        OpenSourceFile(logMsgItem.Message.SourceFileName, logMsgItem.Message.SourceFileLineNr);
+      }
+    }
+
+    private void OpenSourceFile(string fileName, uint line)
+    {
+        if (string.IsNullOrEmpty(fileName))
+        {
+            textEditorSourceCode.Visible = false;
+            lbFileName.Text = string.Empty;
+            return;
+        }
+
+        textEditorSourceCode.Visible = true;
+        try
+        {
+            //If the file cannot be found, try to locate it using the source code mapping configuration
+            var mappedFile = TryToLocateSourceFile(fileName);
+            if (string.IsNullOrEmpty(mappedFile))
+            {
+                textEditorSourceCode.Visible = false;
+                lbFileName.Text = string.Format("Original file: {0} not found...", fileName);
+                return;
+            }
+
+            if (!File.Exists(mappedFile))
+            {
+                textEditorSourceCode.Visible = false;
+                lbFileName.Text = string.Format("Mapped file: {0} not found...", fileName);
+                return;
+            }                
+            
+            if (line > 1)
+                line--;
+            textEditorSourceCode.LoadFile(mappedFile);
+            textEditorSourceCode.ActiveTextAreaControl.TextArea.Caret.Line = (int) line;
+            textEditorSourceCode.ActiveTextAreaControl.TextArea.Caret.UpdateCaretPosition();
+            lbFileName.Text = mappedFile + ":" + line;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(string.Format("Message: {0}, Stack Trace: {1}", ex.Message, ex.StackTrace), "Error opening source file");
+        }
+    }
+
+    private string TryToLocateSourceFile(string file)
+    {
+        //First see if there is a mapping for the file to a different location
+        if (UserSettings.Instance.SourceLocationMapConfiguration != null)
+            foreach (var sourceMap in UserSettings.Instance.SourceLocationMapConfiguration)
+            {
+                if(file.StartsWith(sourceMap.LogSource))
+                {
+                    file = sourceMap.LocalSource + file.Remove(0, sourceMap.LogSource.Length);                   
+                    return file;
+                }
+            }
+
+        //If not, then see if the original file exists
+        return File.Exists(file) ? file : null;
+    }
+
+      private void PopulateExceptions(string exceptions)
+    {
+        if(string.IsNullOrEmpty(exceptions))
+        {
+            tbExceptions.Text = string.Empty;
+            return;                
+        }
+
+        string[] lines = exceptions.Split(new[] {"\r\n", "\n"}, StringSplitOptions.None);
+        foreach (var line in lines)
+        {
+            if (!ParseCSharpStackTraceLine(line))
+            {
+                //No supported exception stack traces is detected
+                tbExceptions.SelectedText = line;
+            }
+            //else if (Add other Parsers Here...)
+
+            tbExceptions.SelectedText = "\r\n";  
+        }              
+    }
+
+    private bool ParseCSharpStackTraceLine(string line)
+    {
+        bool stackTraceFileDetected = false;
+
+        //Detect a C Sharp File                
+        int endOfFileIndex = line.ToLower().LastIndexOf(".cs");
+        if (endOfFileIndex != -1)
+        {
+            var leftTruncatedFile = line.Substring(0, endOfFileIndex + 3);
+            int startOfFileIndex = leftTruncatedFile.LastIndexOf(":") - 1;
+            if (startOfFileIndex >= 0)
+            {
+                string fileName = leftTruncatedFile.Substring(startOfFileIndex, leftTruncatedFile.Length - startOfFileIndex);
+
+                const string lineSignature = ":line ";
+                int lineIndex = line.ToLower().LastIndexOf(lineSignature);
+                if (lineIndex != -1)
+                {
+                    int lineSignatureLength = lineSignature.Length;
+                    var lineNrString = line.Substring(lineIndex + lineSignatureLength,
+                                                        line.Length - lineIndex - lineSignatureLength);
+                    lineNrString = lineNrString.TrimEnd(new[] { ',' });
+                    if (!string.IsNullOrEmpty(lineNrString))
+                    {
+                        uint parsedLineNr;
+                        if (uint.TryParse(lineNrString, out parsedLineNr))
+                        {
+                            int fileLine = (int)parsedLineNr;
+                            stackTraceFileDetected = true;
+
+                            tbExceptions.SelectedText = line.Substring(0, startOfFileIndex - 1) + " ";
+                            tbExceptions.InsertLink(string.Format("{0} line:{1}",
+                                                            fileName, fileLine));
+                        }
+                    }
+                }
+            }
+        }
+
+        return stackTraceFileDetected; 
     }
 
     private void logDetailTextBox_TextChanged(object sender, EventArgs e)
@@ -982,6 +1156,89 @@ namespace Log2Console
         }
       }
     }
-  }
 
+
+    private void btnOpenFileInVS_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            var processInfo = new ProcessStartInfo("devenv",
+                                                   string.Format("/edit \"{0}\" /command \"Edit.Goto {1}\"",
+                                                                 textEditorSourceCode.FileName, 0));
+            var process = Process.Start(processInfo);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Error opening file in Visual Studio");
+        }
+    }
+
+    private void TbExceptionsLinkClicked(object sender, LinkClickedEventArgs e)
+    {
+        string exception = e.LinkText;
+        if (exception != null)
+        {
+            var exceptionPair = exception.Split(new[] {" line:"}, StringSplitOptions.None);
+            if (exceptionPair.Length == 2)
+            {
+                int lineNr=0;
+                int.TryParse(exceptionPair[1], out lineNr);
+
+                OpenSourceFile(exceptionPair[0], (uint) lineNr);
+                tabControlDetail.SelectedTab = tabSource;
+            }                                   
+        }
+    }
+
+    private void quickLoadBtn_Click(object sender, EventArgs e)
+    {
+        if (openFileDialog1.ShowDialog() == DialogResult.OK)
+        {
+            if (!File.Exists(openFileDialog1.FileName))
+            {
+                MessageBox.Show(string.Format("File: {0} does not exists", openFileDialog1.FileName),
+                                "Error Opening Log File");
+                return;
+            }
+
+            var fileReceivers = new List<IReceiver>();
+            foreach (var receiver in UserSettings.Instance.Receivers)
+            {
+                if (receiver is CsvFileReceiver)
+                    fileReceivers.Add(receiver);
+            }
+
+            var form = new ReceiversForm(fileReceivers, true);
+            if (form.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            foreach (IReceiver receiver in form.AddedReceivers)
+            {
+                UserSettings.Instance.Receivers.Add(receiver);
+                InitializeReceiver(receiver);
+            }
+
+            UserSettings.Instance.Save();
+
+            var fileReceiver = form.SelectedReceiver as CsvFileReceiver;
+            if (fileReceiver == null)
+                return;
+
+            fileReceiver.ShowFromBeginning = true;
+            fileReceiver.FileToWatch = openFileDialog1.FileName;
+            fileReceiver.Attach(this);
+
+            /*
+        var fileReceiver = new CsvFileReceiver();
+
+        fileReceiver.FileToWatch = openFileDialog1.FileName;
+        fileReceiver.ReadHeaderFromFile = true;
+        fileReceiver.ShowFromBeginning = true;
+    
+        fileReceiver.Initialize();
+        fileReceiver.Attach(this);
+        */
+        }
+    }
+  }
 }

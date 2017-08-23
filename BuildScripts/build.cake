@@ -237,7 +237,9 @@ Task("PackageChocolatey")
     .Does(() =>
 {
     CleanDirectories(chocolateyArtifactDirectory);
-    DeleteDirectory(buildDirectory + Directory("app.publish"), true);
+
+    var publishDirectory = buildDirectory + Directory("app.publish");
+    if(DirectoryExists(publishDirectory)) DeleteDirectory(publishDirectory, true);
 
     //Get the Version Number
     var gitVersion = GitVersion(new GitVersionSettings());

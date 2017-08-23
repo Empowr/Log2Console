@@ -160,7 +160,7 @@ public string GetVersion()
     var gitVersion = GitVersion(new GitVersionSettings());
     var isPreRelease = !string.IsNullOrEmpty(gitVersion.PreReleaseTag);
     var version = isPreRelease 
-            ? gitVersion.MajorMinorPatch + "." + gitVersion.CommitsSinceVersionSource + "-" + gitVersion.PreReleaseLabel + gitVersion.CommitsSinceVersionSourcePadded
+            ? gitVersion.MajorMinorPatch + "." + gitVersion.CommitsSinceVersionSource + "-" + gitVersion.PreReleaseLabel
             : gitVersion.MajorMinorPatch + "." + gitVersion.CommitsSinceVersionSource;
     return version;
 }
@@ -241,8 +241,8 @@ Task("PackageChocolatey")
     //Get the Version Number
     var gitVersion = GitVersion(new GitVersionSettings());
     var isPreRelease = !string.IsNullOrEmpty(gitVersion.PreReleaseTag);
-    //var version = GetVersion();
-    var version = gitVersion.NuGetVersionV2;
+    var version = GetVersion();
+    //var version = gitVersion.NuGetVersionV2;
     //Configure NuGet
     Information("Going to Pack: " + chocolateyFiles);
     var chocolateyPackSettings   = new ChocolateyPackSettings {

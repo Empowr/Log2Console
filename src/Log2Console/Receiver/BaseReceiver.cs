@@ -41,5 +41,9 @@ namespace Log2Console.Receiver
         }
 
         #endregion
+
+        public virtual void Clear()
+        {
+        }
     }
 }

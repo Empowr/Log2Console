@@ -293,7 +293,8 @@ namespace Log2Console.Log
 
         internal void UpdateLogLevel()
         {
-            _logListView.BeginUpdate();
+            //_logListView.BeginUpdate();
+            //_logListView.Sorting = SortOrder.None;
 
             foreach (LogMessageItem item in LogMessages)
             {
@@ -305,10 +306,10 @@ namespace Log2Console.Log
                 kvp.Value.UpdateLogLevel();
             }
 
-            _logListView.Sorting = SortOrder.Ascending;
-            _logListView.Sort();
+            //_logListView.Sorting = SortOrder.Ascending;
+            //_logListView.Sort();
 
-            _logListView.EndUpdate();
+            //_logListView.EndUpdate();
         }
 
         private void EnableLogMessage(LogMessageItem item, bool enable)
@@ -407,7 +408,7 @@ namespace Log2Console.Log
 
 
             // We may remove and add many items, disable the drawing one moment
-            _logListView.BeginUpdate();
+            //_logListView.BeginUpdate();
 
             // Limit the number of displayed messages if necessary
             if (UserSettings.Instance.MessageCycleCount > 0)
@@ -423,6 +424,7 @@ namespace Log2Console.Log
             {
                 // Add it to the main list
                 _logListView.Items.Add(item.Item);
+                //_logListView.VirtualListSize++;
 
                 // Add to the corresponding if necessary
                 if (UserSettings.Instance.GroupLogMessages && (Group != null))
@@ -438,7 +440,7 @@ namespace Log2Console.Log
                 DisableLogMessage(item);
 
             // Done!
-            _logListView.EndUpdate();
+            //_logListView.EndUpdate();
 
             return item;
         }

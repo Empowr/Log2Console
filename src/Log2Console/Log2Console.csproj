@@ -78,6 +78,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Elasticsearch.Net, Version=5.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d, processorArchitecture=MSIL">
+      <HintPath>..\packages\Elasticsearch.Net.5.5.0\lib\net45\Elasticsearch.Net.dll</HintPath>
+    </Reference>
     <Reference Include="ICSharpCode.TextEditor, Version=3.2.1.6466, Culture=neutral, PublicKeyToken=4d61825e8dd49f1a, processorArchitecture=MSIL">
       <HintPath>..\packages\ICSharpCode.TextEditor.3.2.1.6466\lib\Net20\ICSharpCode.TextEditor.dll</HintPath>
       <Private>True</Private>
@@ -98,6 +101,12 @@
       <HintPath>..\packages\WindowsAPICodePack-ShellExtensions.1.1.1\lib\Microsoft.WindowsAPICodePack.ShellExtensions.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Nest, Version=5.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d, processorArchitecture=MSIL">
+      <HintPath>..\packages\NEST.5.5.0\lib\net45\Nest.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -115,6 +124,9 @@
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ICSharpCodeExtension\Actions\CaretActionsExtension.cs" />
+    <EmbeddedResource Include="UI\Log2ConsoleMainControl.resx">
+      <DependentUpon>Log2ConsoleMainControl.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="Linq\Linq.cs" />
     <Compile Include="Log\ILoggerView.cs" />
     <Compile Include="Log\ILogManager.cs" />
@@ -140,6 +152,7 @@
     <Compile Include="Receiver\CsvUdpReceiver.cs" />
     <Compile Include="Receiver\CsvFileReceiver.cs" />
     <Compile Include="Receiver\CsvUtils.cs" />
+    <Compile Include="Receiver\ElasticReceiver.cs" />
     <Compile Include="Settings\FileSelectorTypeEditor.cs" />
     <Compile Include="UI\Log2ConsoleMainControl.cs">
       <SubType>UserControl</SubType>

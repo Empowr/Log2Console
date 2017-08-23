@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Microsoft.WindowsAPICodePack.Taskbar;
@@ -63,8 +65,9 @@ namespace Log2Console.UI
     public Log2ConsoleMainControl()
     {
         InitializeComponent();
+        
 
-      appNotifyIcon.Text = AboutForm.AssemblyTitle;
+            appNotifyIcon.Text = AboutForm.AssemblyTitle;
 
       levelComboBox.SelectedIndex = 0;
 
@@ -87,12 +90,10 @@ namespace Log2Console.UI
       _loggersPanelFloaty.DontHideHandle = true;
       _loggersPanelFloaty.Docking += OnFloatyDocking;
 
-      // Settings
-      
-
-        
+            // Settings   
+       
     }
-
+       
         public void Initialize(Form parrentForm = null)
         {
             _parrentForm = parrentForm;
@@ -172,15 +173,109 @@ namespace Log2Console.UI
                 parrentForm.Shown += OnShown;
                 parrentForm.Closing += OnFormClosing;
             }
+
+            //logListView.VirtualMode = true;
+            //logListView.VirtualListSize = size;
+            //logListView.RetrieveVirtualItem += new RetrieveVirtualItemEventHandler(listView1_RetrieveVirtualItem);
+            //logListView.CacheVirtualItems += new CacheVirtualItemsEventHandler(listView1_CacheVirtualItems);
+            //logListView.SearchForVirtualItem += new SearchForVirtualItemEventHandler(listView1_SearchForVirtualItem);
+
+            //var items = new ListViewItem.ListViewSubItem[UserSettings.Instance.ColumnConfiguration.Length];
+            //for (int i = 0; i < items.Length; i++)
+            //{
+            //    items[i] = new ListViewItem.ListViewSubItem();
+            //}
+            //for (int i = 0; i < size; i++)
+            //{
+
+            //    myCache[i] = new ListViewItem(items, 0);
+            //}
+        }
+
+        private const int size = 1000;
+        private ListViewItem[] myCache = new ListViewItem[size];
+        private int firstItem;
+
+        //The basic VirtualMode function.  Dynamically returns a ListViewItem
+        //with the required properties; in this case, the square of the index.
+        void listView1_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
+        {
+            //Caching is not required but improves performance on large sets.
+            //To leave out caching, don't connect the CacheVirtualItems event 
+            //and make sure myCache is null.
+
+            //check to see if the requested item is currently in the cache
+            if (myCache != null && e.ItemIndex >= firstItem && e.ItemIndex < firstItem + myCache.Length)
+            {
+                //A cache hit, so get the ListViewItem from the cache instead of making a new one.
+                e.Item = myCache[e.ItemIndex - firstItem];
+            }
+            else
+            {
+                //A cache miss, so create a new ListViewItem and pass it back.
+                int x = e.ItemIndex * e.ItemIndex;
+                e.Item = new ListViewItem(x.ToString());
+            }
+        }
+
+        //Manages the cache.  ListView calls this when it might need a 
+        //cache refresh.
+        void listView1_CacheVirtualItems(object sender, CacheVirtualItemsEventArgs e)
+        {
+            //We've gotten a request to refresh the cache.
+            //First check if it's really neccesary.
+            if (myCache != null && e.StartIndex >= firstItem && e.EndIndex <= firstItem + myCache.Length)
+            {
+                //If the newly requested cache is a subset of the old cache, 
+                //no need to rebuild everything, so do nothing.
+                return;
+            }
+
+            //Now we need to rebuild the cache.
+            firstItem = e.StartIndex;
+            int length = e.EndIndex - e.StartIndex + 1; //indexes are inclusive
+            myCache = new ListViewItem[length];
+
+            //Fill the cache with the appropriate ListViewItems.
+            int x = 0;
+            for (int i = 0; i < length; i++)
+            {
+                x = (i + firstItem) * (i + firstItem);
+                myCache[i] = new ListViewItem(x.ToString());
+            }
+
+        }
+
+        //This event handler enables search functionality, and is called
+        //for every search request when in Virtual mode.
+        void listView1_SearchForVirtualItem(object sender, SearchForVirtualItemEventArgs e)
+        {
+            //We've gotten a search request.
+            //In this example, finding the item is easy since it's
+            //just the square of its index.  We'll take the square root
+            //and round.
+            double x = 0;
+            if (Double.TryParse(e.Text, out x)) //check if this is a valid search
+            {
+                x = Math.Sqrt(x);
+                x = Math.Round(x);
+                e.Index = (int)x;
+
+            }
+            //If e.Index is not set, the search returns null.
+            //Note that this only handles simple searches over the entire
+            //list, ignoring any other settings.  Handling Direction, StartIndex,
+            //and the other properties of SearchForVirtualItemEventArgs is up
+            //to this handler.
         }
 
 
-    /// <summary>
-    /// Catch on minimize event
-    /// @author : Asbjørn Ulsberg -=|=- asbjornu@hotmail.com
-    /// </summary>
-    /// <param name="msg"></param>
-    protected override void WndProc(ref Message msg)
+        /// <summary>
+        /// Catch on minimize event
+        /// @author : Asbjørn Ulsberg -=|=- asbjornu@hotmail.com
+        /// </summary>
+        /// <param name="msg"></param>
+        protected override void WndProc(ref Message msg)
     {
       const int WM_SIZE = 0x0005;
       const int SIZE_MINIMIZED = 1;
@@ -280,105 +375,105 @@ namespace Log2Console.UI
 
     private void ApplySettings(bool noCheck)
     {
-        if (_parrentForm != null)
-        {
-            _parrentForm.Opacity = (double)UserSettings.Instance.Transparency / 100;
-            _parrentForm.ShowInTaskbar = !UserSettings.Instance.HideTaskbarIcon;
+            if (_parrentForm != null)
+            {
+                _parrentForm.Opacity = (double)UserSettings.Instance.Transparency / 100;
+                _parrentForm.ShowInTaskbar = !UserSettings.Instance.HideTaskbarIcon;
 
-            _parrentForm.TopMost = UserSettings.Instance.AlwaysOnTop;
-        }
-        pinOnTopBtn.Checked = UserSettings.Instance.AlwaysOnTop;
-      autoLogToggleBtn.Checked = UserSettings.Instance.AutoScrollToLastLog;
+                _parrentForm.TopMost = UserSettings.Instance.AlwaysOnTop;
+            }
+            pinOnTopBtn.Checked = UserSettings.Instance.AlwaysOnTop;
+            autoLogToggleBtn.Checked = UserSettings.Instance.AutoScrollToLastLog;
 
-      logListView.Font = UserSettings.Instance.LogListFont;
-      logDetailTextBox.Font = UserSettings.Instance.LogDetailFont;
-      loggerTreeView.Font = UserSettings.Instance.LoggerTreeFont;
+            logListView.Font = UserSettings.Instance.LogListFont;
+            logDetailTextBox.Font = UserSettings.Instance.LogDetailFont;
+            loggerTreeView.Font = UserSettings.Instance.LoggerTreeFont;
 
-      logListView.BackColor = UserSettings.Instance.LogListBackColor;
+            logListView.BackColor = UserSettings.Instance.LogListBackColor;
 
-      LogLevels.Instance.LogLevelInfos[(int)LogLevel.Trace].Color = UserSettings.Instance.TraceLevelColor;
-      LogLevels.Instance.LogLevelInfos[(int)LogLevel.Debug].Color = UserSettings.Instance.DebugLevelColor;
-      LogLevels.Instance.LogLevelInfos[(int)LogLevel.Info].Color = UserSettings.Instance.InfoLevelColor;
-      LogLevels.Instance.LogLevelInfos[(int)LogLevel.Warn].Color = UserSettings.Instance.WarnLevelColor;
-      LogLevels.Instance.LogLevelInfos[(int)LogLevel.Error].Color = UserSettings.Instance.ErrorLevelColor;
-      LogLevels.Instance.LogLevelInfos[(int)LogLevel.Fatal].Color = UserSettings.Instance.FatalLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Trace].Color = UserSettings.Instance.TraceLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Debug].Color = UserSettings.Instance.DebugLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Info].Color = UserSettings.Instance.InfoLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Warn].Color = UserSettings.Instance.WarnLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Error].Color = UserSettings.Instance.ErrorLevelColor;
+            LogLevels.Instance.LogLevelInfos[(int)LogLevel.Fatal].Color = UserSettings.Instance.FatalLevelColor;
 
-      levelComboBox.SelectedIndex = (int)UserSettings.Instance.LogLevelInfo.Level;
+            levelComboBox.SelectedIndex = (int)UserSettings.Instance.LogLevelInfo.Level;
 
-      if (logListView.ShowGroups != UserSettings.Instance.GroupLogMessages)
-      {
-        if (noCheck)
-        {
-          logListView.ShowGroups = UserSettings.Instance.GroupLogMessages;
-        }
-        else
-        {
-          DialogResult res = MessageBox.Show(
-              this,
-              @"You changed the Message Grouping setting, the Log Message List must be cleared, OK?",
-              Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            if (logListView.ShowGroups != UserSettings.Instance.GroupLogMessages)
+            {
+                if (noCheck)
+                {
+                    logListView.ShowGroups = UserSettings.Instance.GroupLogMessages;
+                }
+                else
+                {
+                    DialogResult res = MessageBox.Show(
+                        this,
+                        @"You changed the Message Grouping setting, the Log Message List must be cleared, OK?",
+                        Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
 
-          if (res == DialogResult.OK)
-          {
-            ClearAll();
-            logListView.ShowGroups = UserSettings.Instance.GroupLogMessages;
-          }
-          else
-          {
-            UserSettings.Instance.GroupLogMessages = !UserSettings.Instance.GroupLogMessages;
-          }
-        }
-      }
+                    if (res == DialogResult.OK)
+                    {
+                        ClearAll();
+                        logListView.ShowGroups = UserSettings.Instance.GroupLogMessages;
+                    }
+                    else
+                    {
+                        UserSettings.Instance.GroupLogMessages = !UserSettings.Instance.GroupLogMessages;
+                    }
+                }
+            }
 
-	    //See if the Columns Changed
-	    bool columnsChanged = false;
-	
-	    if (logListView.Columns.Count != UserSettings.Instance.ColumnConfiguration.Length)
-	        columnsChanged = true;
-	    else
-	        for (int i = 0; i < UserSettings.Instance.ColumnConfiguration.Length; i++)
-	        {
-	            if (!UserSettings.Instance.ColumnConfiguration[i].Name.Equals(logListView.Columns[i].Text))
-	            {
-	                columnsChanged = true;
-	                break;
-	            }
-	        }
-	
-	    if (columnsChanged)
-	    {
-	        logListView.Columns.Clear();
-	        foreach (var column in UserSettings.Instance.ColumnConfiguration)
-	        {
-	            logListView.Columns.Add(column.Name);
-	        }
-	    }
+            //See if the Columns Changed
+            bool columnsChanged = false;
 
-      // Layout
-      if (noCheck)
-      {
-          if (_parrentForm != null)
-          {
-              _parrentForm.DesktopBounds = UserSettings.Instance.Layout.WindowPosition;
-              _parrentForm.WindowState = UserSettings.Instance.Layout.WindowState;
-          }
+            if (logListView.Columns.Count != UserSettings.Instance.ColumnConfiguration.Length)
+                columnsChanged = true;
+            else
+                for (int i = 0; i < UserSettings.Instance.ColumnConfiguration.Length; i++)
+                {
+                    if (!UserSettings.Instance.ColumnConfiguration[i].Name.Equals(logListView.Columns[i].Text))
+                    {
+                        columnsChanged = true;
+                        break;
+                    }
+                }
 
-          ShowDetailsPanel(UserSettings.Instance.Layout.ShowLogDetailView);
-        logDetailPanel.Size = UserSettings.Instance.Layout.LogDetailViewSize;
+            if (columnsChanged)
+            {
+                logListView.Columns.Clear();
+                foreach (var column in UserSettings.Instance.ColumnConfiguration)
+                {
+                    logListView.Columns.Add(column.Name);
+                }
+            }
 
-        ShowLoggersPanel(UserSettings.Instance.Layout.ShowLoggerTree);
-        loggerPanel.Size = UserSettings.Instance.Layout.LoggerTreeSize;
+            // Layout
+            if (noCheck)
+            {
+                if (_parrentForm != null)
+                {
+                    _parrentForm.DesktopBounds = UserSettings.Instance.Layout.WindowPosition;
+                    _parrentForm.WindowState = UserSettings.Instance.Layout.WindowState;
+                }
 
-        if (UserSettings.Instance.Layout.LogListViewColumnsWidths != null)
-        {
-          for (int i = 0; i < UserSettings.Instance.Layout.LogListViewColumnsWidths.Length; i++)
-          {
-            if (i < logListView.Columns.Count)
-            	logListView.Columns[i].Width = UserSettings.Instance.Layout.LogListViewColumnsWidths[i];
-          }
-        }
-      }
-    }
+                ShowDetailsPanel(UserSettings.Instance.Layout.ShowLogDetailView);
+                logDetailPanel.Size = UserSettings.Instance.Layout.LogDetailViewSize;
+
+                ShowLoggersPanel(UserSettings.Instance.Layout.ShowLoggerTree);
+                loggerPanel.Size = UserSettings.Instance.Layout.LoggerTreeSize;
+
+                if (UserSettings.Instance.Layout.LogListViewColumnsWidths != null)
+                {
+                    for (int i = 0; i < UserSettings.Instance.Layout.LogListViewColumnsWidths.Length; i++)
+                    {
+                        if (i < logListView.Columns.Count)
+                            logListView.Columns[i].Width = UserSettings.Instance.Layout.LogListViewColumnsWidths[i];
+                    }
+                }
+            }
+            }
 
     private void InitializeReceiver(IReceiver receiver)
     {
@@ -578,11 +673,17 @@ namespace Log2Console.UI
         return;
 
       logListView.BeginUpdate();
+      loggerTreeView.BeginUpdate();
+      var temp = logListView.ListViewItemSorter;
+      logListView.ListViewItemSorter = null;
 
       foreach (LogMessage msg in logMsgs)
         AddLogMessage(msg);
 
+      logListView.ListViewItemSorter = temp;
+      loggerTreeView.EndUpdate();
       logListView.EndUpdate();
+      
     }
 
     /// <summary>
@@ -604,7 +705,7 @@ namespace Log2Console.UI
 	      if (!Visible && UserSettings.Instance.NotifyNewLogWhenHidden)
 	        ShowBalloonTip("A new message has been received...");
 	    }
-        catch (Exception)
+        catch (Exception ex)
         {
         }
     }
@@ -867,7 +968,17 @@ namespace Log2Console.UI
 
     private void clearBtn_Click(object sender, EventArgs e)
     {
-      ClearLogMessages();
+        try
+        {
+            ClearLogMessages();
+            UserSettings.Instance.Receivers.ForEach(receiver => receiver.Clear());
+        }
+        catch (Exception ex)
+        {
+            var message = $"Error clearing all receivers: {ex.Message}";
+            Console.WriteLine(message);
+            MessageBox.Show(message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void closeLoggersPanelBtn_Click(object sender, EventArgs e)
@@ -1088,10 +1199,19 @@ namespace Log2Console.UI
 
       using (new AutoWaitCursor())
       {
-        UserSettings.Instance.LogLevelInfo =
+          logListView.BeginUpdate();
+          loggerTreeView.BeginUpdate();
+
+                UserSettings.Instance.LogLevelInfo =
             LogUtils.GetLogLevelInfo((LogLevel)levelComboBox.SelectedIndex);
         LogManager.Instance.UpdateLogLevel();
-      }
+
+          logListView.Sorting = SortOrder.Ascending;
+          logListView.Sort();
+                logListView.EndUpdate();
+          loggerTreeView.EndUpdate();
+
+            }
     }
 
     private void loggerTreeView_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
@@ -1281,5 +1401,30 @@ namespace Log2Console.UI
         */
         }
     }
-  }
+
+        private async void queryBtn_Click(object sender, EventArgs e)
+        {
+            var queryRunners = UserSettings.Instance.Receivers.OfType<IQueryRunner>();
+            var defaultQueryRunner = queryRunners.FirstOrDefault();
+            if (defaultQueryRunner == null)
+            {
+                MessageBox.Show("No Query Runner Receivers Configured. Please ad a relevant receiver.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                receiversBtn_Click(sender, e);
+                return;
+            }
+
+            try
+            {
+                await Task.Run(()=> defaultQueryRunner.RunQuery());
+            }
+            catch (Exception ex)
+            {
+                var message = $"Error running query: {ex.Message}";
+                Console.WriteLine(message);
+                MessageBox.Show(message, "Error", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+    }
 }

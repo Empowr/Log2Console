@@ -13,5 +13,11 @@ namespace Log2Console.Receiver
 
         void Attach(ILogMessageNotifiable notifiable);
         void Detach();
+        void Clear();
+    }
+
+    public interface IQueryRunner
+    {
+        void RunQuery();
     }
 }

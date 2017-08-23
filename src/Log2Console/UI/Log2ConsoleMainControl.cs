@@ -359,8 +359,13 @@ namespace Log2Console.UI
 
     protected override void OnLoad(EventArgs e)
     {
+        var thisType = GetType();
+        var assemblyName = thisType.Assembly.GetName().Name;
+        var gitVersionInformationType = thisType.Assembly.GetType(assemblyName + ".GitVersionInformation");
+        var versionField = gitVersionInformationType.GetField("FullSemVer").GetValue(null);
+
       // Display Version
-      versionLabel.Text = AboutForm.AssemblyTitle + @" v" + AboutForm.AssemblyVersion;
+      versionLabel.Text = AboutForm.AssemblyTitle + @" v" + versionField;
 
       DoubleBuffered = true;
       base.OnLoad(e);

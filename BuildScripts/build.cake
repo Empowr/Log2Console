@@ -250,7 +250,7 @@ Task("PackageChocolatey")
     Information("Going to Pack: " + chocolateyFiles);
     var chocolateyPackSettings   = new ChocolateyPackSettings {
                                      Id                      = "Log2Console",
-                                     Title                   = "NLog Monitoring Tool (Install)",
+                                     Title                   = "Log2Console (Install)",
                                      Version                 = version,
                                      Authors                 = new[] {"Michal Steyn"},
                                      Owners                  = new[] {"ICM"},
